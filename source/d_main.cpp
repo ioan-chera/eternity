@@ -1422,6 +1422,8 @@ static void D_DoomInit()
          fastdemo = true;            // run at fastest speed possible
       else
          p = M_CheckParm("-timedemo");
+      if(!p || p >= myargc - 1)
+         p = M_CheckParm("-hashdemo");
    }
 
    // haleyjd 02/29/2012: support a loose demo on the command line
@@ -1839,6 +1841,15 @@ static void D_DoomInit()
       timingdemo = true;            // show stats after quit
       G_DeferedPlayDemo(myargv[p]);
       singledemo = true;            // quit after one demo
+   }
+   else if((p = M_CheckParm("-hashdemo")) && ++p < myargc)
+   {
+      // IOANCH: hash demo
+      singletics = true;
+      g_hashingDemo = true;
+      timingdemo = true;
+      G_DeferedPlayDemo(myargv[p]);
+      singledemo = true;
    }
    else if((p = M_CheckMultiParm(playdemoparms, 1)) && ++p < myargc)
    {

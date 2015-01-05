@@ -254,6 +254,8 @@ extern  bool singledemo;
 extern  bool timingdemo;
 // Run tick clock at fastest speed possible while playing demo.  killough
 extern  bool fastdemo;
+// IOANCH: hash demo
+extern bool g_hashingDemo;
 
 extern  gamestate_t  gamestate;
 

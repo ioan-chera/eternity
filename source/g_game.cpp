@@ -59,6 +59,7 @@
 #include "in_lude.h"
 #include "m_argv.h"
 #include "m_collection.h"
+#include "m_hash.h"  // IOANCH
 #include "m_misc.h"
 #include "m_random.h"
 #include "m_shots.h"
@@ -144,6 +145,10 @@ int             runiswalk = false;    // haleyjd 08/23/09
 int             automlook = false;
 int             smooth_turning = 0;   // sf
 int             novert;               // haleyjd
+
+// IOANCH: hash demo
+bool g_hashingDemo;                       // whether the demo will do hashing
+static PODCollection<fixed_t> g_hashDemoArray;   // player(s) coordinates
 
 // sf: moved sensitivity here
 double          mouseSensitivity_horiz;   // has default   //  killough
@@ -1872,6 +1877,13 @@ static void G_CameraTicker(void)
    }
 }
 
+// IOANCH: -hashdemo
+inline static void G_writeDemoCoordinates(const player_t* player)
+{
+   g_hashDemoArray.add(player->mo->x);
+   g_hashDemoArray.add(player->mo->y);
+}
+
 //
 // G_Ticker
 //
@@ -1974,7 +1986,13 @@ void G_Ticker()
             memcpy(cmd, &netcmds[i][buf], sizeof *cmd);
             
             if(demoplayback)
+            {
+               // IOANCH: hashdemo
+               if(g_hashingDemo)
+                  G_writeDemoCoordinates(&players[i]);
+               
                G_ReadDemoTiccmd(cmd);
+            }
             
             if(demorecording)
                G_WriteDemoTiccmd(cmd);
@@ -3435,17 +3453,38 @@ bool G_CheckDemoStatus()
       I_ExitWithMessage("Demo %s recorded\n", demoname);
       return false;  // killough
    }
+   
+   // IOANCH: -hashdemo
+   HashData hash(HashData::MD5);
+   const char* md5 = nullptr;
+   if(g_hashingDemo)
+   {
+      hash.addData((const uint8_t*)&g_hashDemoArray[0],
+                   g_hashDemoArray.getLength() * sizeof(fixed_t));
+      hash.wrapUp();
+      md5 = hash.digestToString();
+   }
 
    if(timingdemo)
    {
       int endtime = i_haltimer.GetRealTime();
-
+      
       // killough -- added fps information and made it work for longer demos:
       unsigned int realtics = endtime - starttime;
-      I_Error("Timed %u gametics in %u realtics = %-.1f frames per second\n",
-              (unsigned int)(gametic), realtics,
-              (unsigned int)(gametic) * (double) TICRATE / realtics);
-   }              
+      
+      if(md5)
+      {
+         I_Error("Timed %u gametics in %u realtics = %-.1f frames per second\nDemo hash: %s\n",
+                 (unsigned int)(gametic), realtics,
+                 (unsigned int)(gametic) * (double) TICRATE / realtics, md5);
+      }
+      else
+      {
+         I_Error("Timed %u gametics in %u realtics = %-.1f frames per second\n",
+                 (unsigned int)(gametic), realtics,
+                 (unsigned int)(gametic) * (double) TICRATE / realtics);
+      }
+   }
 
    if(demoplayback)
    {
