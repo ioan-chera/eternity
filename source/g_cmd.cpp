@@ -416,8 +416,8 @@ CONSOLE_NETVAR(name, default_name, cf_handlerset, netcmd_name)
 
 // screenshot type
 
-const char *str_pcx[] = { "bmp", "pcx", "tga", "png" };
-VARIABLE_INT(screenshot_pcx, NULL, 0, 3, str_pcx);
+const char *str_pcx[] = { "bmp", "pcx", "tga", "png", "gif" };
+VARIABLE_INT(screenshot_pcx, NULL, 0, 4, str_pcx);
 CONSOLE_VARIABLE(shot_type, screenshot_pcx, 0) {}
 
 VARIABLE_BOOLEAN(screenshot_gamma, NULL, yesno);

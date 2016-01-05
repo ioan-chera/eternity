@@ -13,6 +13,7 @@
 		4F2F32AC1867100100EED7DE /* e_reverbs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F2F32A21867100100EED7DE /* e_reverbs.cpp */; };
 		4F2F32AE1867100100EED7DE /* s_reverb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F2F32A71867100100EED7DE /* s_reverb.cpp */; };
 		4F2F32B01867100100EED7DE /* v_image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F2F32A91867100100EED7DE /* v_image.cpp */; };
+		4F359C0D1C39E44600C55283 /* libgif.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F359C0C1C39E44500C55283 /* libgif.a */; };
 		4F36247B18A567CD00B94FA1 /* xl_emapinfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F36247218A567CD00B94FA1 /* xl_emapinfo.cpp */; };
 		4F36247D18A567CD00B94FA1 /* xl_mapinfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F36247418A567CD00B94FA1 /* xl_mapinfo.cpp */; };
 		4F36247F18A567CD00B94FA1 /* xl_musinfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F36247618A567CD00B94FA1 /* xl_musinfo.cpp */; };
@@ -313,6 +314,7 @@
 		4F2F32A81867100100EED7DE /* s_reverb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = s_reverb.h; path = ../source/s_reverb.h; sourceTree = "<group>"; };
 		4F2F32A91867100100EED7DE /* v_image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = v_image.cpp; path = ../source/v_image.cpp; sourceTree = "<group>"; };
 		4F2F32AA1867100100EED7DE /* v_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = v_image.h; path = ../source/v_image.h; sourceTree = "<group>"; };
+		4F359C0C1C39E44500C55283 /* libgif.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgif.a; path = staticlib/libgif.a; sourceTree = "<group>"; };
 		4F36247118A567A500B94FA1 /* r_textur.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = r_textur.h; path = ../source/r_textur.h; sourceTree = "<group>"; };
 		4F36247218A567CD00B94FA1 /* xl_emapinfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = xl_emapinfo.cpp; path = ../source/xl_emapinfo.cpp; sourceTree = "<group>"; };
 		4F36247318A567CD00B94FA1 /* xl_emapinfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = xl_emapinfo.h; path = ../source/xl_emapinfo.h; sourceTree = "<group>"; };
@@ -845,6 +847,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F359C0D1C39E44600C55283 /* libgif.a in Frameworks */,
 				4F5F399B182D9C100027813A /* libvorbis.a in Frameworks */,
 				4F5F386D182D97A20027813A /* Foundation.framework in Frameworks */,
 				4F5F3991182D9BE80027813A /* AudioToolbox.framework in Frameworks */,
@@ -919,6 +922,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				4F359C0C1C39E44500C55283 /* libgif.a */,
 				4FFFDF7B1753487900E70FEC /* Linked Frameworks */,
 				4FD651AF16B8032900F9BE74 /* Static Libraries */,
 				FAF6A06C1691A0D2009EBD3C /* Cocoa.framework */,
@@ -2224,6 +2228,7 @@
 					"$(inherited)",
 					staticlib,
 					"libc++",
+					"$(PROJECT_DIR)/staticlib",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2267,6 +2272,7 @@
 					"$(inherited)",
 					staticlib,
 					"libc++",
+					"$(PROJECT_DIR)/staticlib",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2293,6 +2299,7 @@
 					"/Library/Frameworks/SDL_net.framework/**",
 					../libpng,
 					/usr/local/include/SDL,
+					/opt/local/include,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LLVM_LTO = NO;
@@ -2320,6 +2327,7 @@
 					"/Library/Frameworks/SDL_net.framework/**",
 					../libpng,
 					/usr/local/include/SDL,
+					/opt/local/include,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LLVM_LTO = YES;

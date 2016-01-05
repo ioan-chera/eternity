@@ -23,6 +23,7 @@
 //
 //-----------------------------------------------------------------------------
 
+#include <gif_lib.h>
 #include "z_zone.h"
 
 #include "autopalette.h"
@@ -550,6 +551,49 @@ static bool png_Writer(OutBuffer *ob, byte *data,
 
 //=============================================================================
 //
+// ioanch 20160104: GIF support
+//
+
+static bool gif_Writer(OutBuffer *ob, byte *data,
+                       uint32_t width, uint32_t height, byte *palette)
+{
+   ColorMapObject *gifCMap = MakeMapObject(256, nullptr);
+   // typedef int (*OutputFunc) (GifFileType *, const GifByteType *, int);
+   struct GifData
+   {
+      OutBuffer *ob;
+   };
+   GifData gifdata;
+   gifdata.ob = ob;
+
+   for(int i = 0; i < 256; ++i)
+   {
+      gifCMap->Colors[i].Red = gammatable[usegamma][palette[i*3+0]];
+      gifCMap->Colors[i].Green = gammatable[usegamma][palette[i*3+1]];
+      gifCMap->Colors[i].Blue = gammatable[usegamma][palette[i*3+2]];
+   }
+
+   GifFileType *gifFile = EGifOpen(&gifdata, [](GifFileType *gif, const GifByteType *data, int size) -> int {
+
+      return 0;
+   });
+
+   EGifPutScreenDesc(gifFile, width, height, 256, 0, gifCMap);
+   EGifPutImageDesc(gifFile, 0, 0, width, height, false, gifCMap);
+   for(int i = 0; i < height; ++i)
+   {
+      for(int j = 0; j < width; ++j)
+      {
+         EGifPutPixel(gifFile, data[i * width + j]);
+      }
+   }
+   EGifCloseFile(gifFile);
+
+   return true;
+}
+
+//=============================================================================
+//
 // Shared Code
 //
 
@@ -568,6 +612,7 @@ enum
    SHOT_PCX,
    SHOT_TGA,
    SHOT_PNG,
+   SHOT_GIF,
    SHOT_NUMSHOTFORMATS
 };
 
@@ -577,6 +622,8 @@ static shotformat_t shotFormats[SHOT_NUMSHOTFORMATS] =
    { "pcx", OutBuffer::LENDIAN, pcx_Writer }, // ZSoft PC Paint
    { "tga", OutBuffer::LENDIAN, tga_Writer }, // Truevision TARGA
    { "png", OutBuffer::NENDIAN, png_Writer }, // Portable Network Graphics
+   // ioanch 20160104: gif support
+   { "gif", OutBuffer::NENDIAN, gif_Writer }, // Graphic Interchange Format
 };
 
 //
