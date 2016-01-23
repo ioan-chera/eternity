@@ -48,13 +48,13 @@ for full_line in lines:
 		number = re.search(r'[0-9]+', line).group()
 		identifier = re.search(r'[A-Za-z0-9]+', line[line.index(','):]).group()
 		name = re.search(r'\"[A-Za-z_0-9]+\"', line).group()
-		print number, identifier, name[1:-1]
 		dict[name[1:-1]] = number
 
 with open(actions_path) as f:
 	lines = f.readlines()
 
 print 'special'
+outputs = []
 for full_line in lines:
 	line = full_line.strip()
 	if not line.startswith('//'):
@@ -73,4 +73,8 @@ for full_line in lines:
 		continue
 	b = b.group().split(',')
 	num_args = len(b)
-	print '\t' + dict[name] + ':' + name + '(' + str(num_args) + ')'
+	outputs.append('\t' + ' ' * (3 - len(dict[name])) + dict[name] + ':' + name + '(' + str(num_args) + ')')
+
+outputs.sort()
+for output in outputs:
+	print output + (',' if output is not outputs[-1] else ';')
