@@ -1011,8 +1011,9 @@ static void E_ThingFrame(const char *data, const char *fieldname,
    int index;
    if((index = E_StateNumForName(data)) < 0)
    {
-      E_EDFLoggedErr(2, "E_ThingFrame: thing '%s': invalid %s '%s'\n",
-                     mobjinfo[thingnum]->name, fieldname, data);
+      // do not use errors if possible
+      E_EDFLoggedWarning(2, "E_ThingFrame: thing '%s': invalid %s '%s'\n",
+                         mobjinfo[thingnum]->name, fieldname, data);
    }
    else
    {
