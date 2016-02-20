@@ -919,23 +919,6 @@ static void E_ThingFrame(const char *data, const char *fieldname,
    *target = index;
 }
 
-//
-// ioanch 20160220: variant with metastate
-//
-static void E_AddMetaState(mobjinfo_t *mi, state_t *state, const char *name);
-static void E_ThingFrame(const char *data, const char *fieldname,
-                         int thingnum, const char *metakey)
-{
-   int index;
-   if((index = E_StateNumForName(data)) < 0)
-   {
-      E_EDFLoggedErr(2, "E_ThingFrame: thing '%s': invalid %s '%s'\n",
-                     mobjinfo[thingnum]->name, fieldname, data);
-   }
-   else
-      E_AddMetaState(mobjinfo[thingnum], states[index], metakey);
-}
-
 //=============================================================================
 //
 // MetaState Management
@@ -1017,6 +1000,24 @@ static void E_SetMetaState(mobjinfo_t *mi, state_t *state, const char *name)
    }
    else
       E_RemoveMetaState(mi, name);      
+}
+
+//
+// ioanch 20160220: variant with metastate
+//
+static void E_ThingFrame(const char *data, const char *fieldname,
+                         int thingnum, const char *metakey)
+{
+   int index;
+   if((index = E_StateNumForName(data)) < 0)
+   {
+      E_EDFLoggedErr(2, "E_ThingFrame: thing '%s': invalid %s '%s'\n",
+                     mobjinfo[thingnum]->name, fieldname, data);
+   }
+   else
+   {
+      E_SetMetaState(mobjinfo[thingnum], states[index], metakey);
+   }
 }
 
 //=============================================================================
@@ -2093,7 +2094,7 @@ void E_ProcessThing(int i, cfg_t *thingsec, cfg_t *pcfg, bool def)
    }
 
    // ioanch 20160220: process healstate
-   if(IS_SET(ITEM_TNG_HEALSTATE))
+   if(cfg_size(thingsec, ITEM_TNG_HEALSTATE) > 0)
    {
       tempstr = cfg_getstr(thingsec, ITEM_TNG_HEALSTATE);
       E_ThingFrame(tempstr, ITEM_TNG_HEALSTATE, i, METASTATE_HEAL);
