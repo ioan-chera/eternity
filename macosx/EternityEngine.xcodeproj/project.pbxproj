@@ -21,6 +21,7 @@
 		4F42A5CC188B336600E6CACD /* i_timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F42A5C9188B336600E6CACD /* i_timer.cpp */; };
 		4F42A5D0188B338600E6CACD /* i_sdltimer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F42A5CD188B338600E6CACD /* i_sdltimer.cpp */; };
 		4F43B448182D9D5800730C02 /* SDLMain.m in Sources */ = {isa = PBXBuildFile; fileRef = FA601C6616961D9A00046D2D /* SDLMain.m */; };
+		4F43DF541D2C2B4D00293C7B /* e_multitag.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F43DF521D2C2B4D00293C7B /* e_multitag.cpp */; };
 		4F5F386D182D97A20027813A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F5F386C182D97A20027813A /* Foundation.framework */; };
 		4F5F3878182D98A30027813A /* a_common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FABF5CB4158BF42800C49E93 /* a_common.cpp */; };
 		4F5F3879182D98A60027813A /* a_counters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FABF5CB5158BF42800C49E93 /* a_counters.cpp */; };
@@ -332,6 +333,8 @@
 		4F42A5CE188B338600E6CACD /* i_sdltimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = i_sdltimer.h; path = ../source/sdl/i_sdltimer.h; sourceTree = "<group>"; };
 		4F42A5D1188B33AA00E6CACD /* p_sector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = p_sector.h; path = ../source/p_sector.h; sourceTree = "<group>"; };
 		4F42A5D2188B33AA00E6CACD /* r_interpolate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = r_interpolate.h; path = ../source/r_interpolate.h; sourceTree = "<group>"; };
+		4F43DF521D2C2B4D00293C7B /* e_multitag.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = e_multitag.cpp; path = ../source/e_multitag.cpp; sourceTree = SOURCE_ROOT; };
+		4F43DF531D2C2B4D00293C7B /* e_multitag.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = e_multitag.h; path = ../source/e_multitag.h; sourceTree = SOURCE_ROOT; };
 		4F50E3FE173770EC00878167 /* r_dynabsp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = r_dynabsp.cpp; path = ../source/r_dynabsp.cpp; sourceTree = "<group>"; };
 		4F50E3FF173770EC00878167 /* r_dynabsp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = r_dynabsp.h; path = ../source/r_dynabsp.h; sourceTree = "<group>"; };
 		4F579A4317BE860B0088B797 /* metaspawn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = metaspawn.h; path = ../source/metaspawn.h; sourceTree = "<group>"; };
@@ -1304,6 +1307,8 @@
 				FA16D3E715E01E96002318D1 /* e_metastate.h */,
 				FABF5CE0158BF42800C49E93 /* e_mod.cpp */,
 				FA16D3E815E01E96002318D1 /* e_mod.h */,
+				4F43DF521D2C2B4D00293C7B /* e_multitag.cpp */,
+				4F43DF531D2C2B4D00293C7B /* e_multitag.h */,
 				FABF5CE1158BF42800C49E93 /* e_player.cpp */,
 				FA16D3E915E01E96002318D1 /* e_player.h */,
 				FABF5CE2158BF42800C49E93 /* e_rtti.cpp */,
@@ -1990,6 +1995,7 @@
 				4F5F3941182D9B0E0027813A /* ser_main.cpp in Sources */,
 				4F2F32B01867100100EED7DE /* v_image.cpp in Sources */,
 				4F5F3942182D9B0E0027813A /* st_hbar.cpp in Sources */,
+				4F43DF541D2C2B4D00293C7B /* e_multitag.cpp in Sources */,
 				4F5F3943182D9B0E0027813A /* st_lib.cpp in Sources */,
 				4F5F3944182D9B0E0027813A /* st_stuff.cpp in Sources */,
 				4F5F3945182D9B0E0027813A /* t_plane.cpp in Sources */,

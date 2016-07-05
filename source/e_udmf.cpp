@@ -459,6 +459,7 @@ enum token_e
    t_monstercross,
    t_monsterpush,
    t_monsteruse,
+   t_moreids,
    t_offsetx,
    t_offsety,
    t_passuse,
@@ -566,6 +567,7 @@ static keytoken_t gTokenList[] =
    TOKEN(monstercross),
    TOKEN(monsterpush),
    TOKEN(monsteruse),
+   TOKEN(moreids),
    TOKEN(offsetx),
    TOKEN(offsety),
    TOKEN(passuse),
@@ -866,6 +868,7 @@ bool UDMFParser::parse(WadDirectory &setupwad, int lump)
 
                      READ_STRING(sector, floorterrain);
                      READ_STRING(sector, ceilingterrain);
+                     READ_STRING(sector, moreids);
                      default:
                         break;
                   }

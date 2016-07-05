@@ -1,7 +1,7 @@
 // Emacs style mode select -*- C++ -*-
 //----------------------------------------------------------------------------
 //
-// Copyright (C) 2015 Ioan Chera et al.
+// Copyright (C) 2015 James Haley et al.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -221,6 +221,8 @@ private:
       int identifier = 0;
 
       bool tfloorset = false, tceilset = false;
+
+      qstring moreids;
    };
 
    struct uthing_t
