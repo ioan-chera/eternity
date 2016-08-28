@@ -1233,6 +1233,7 @@ void A_RavenPlayerScream(actionargs_t *);
 void A_Fall(actionargs_t *);
 void A_XScream(actionargs_t *);
 void A_Look(actionargs_t *);
+void A_Patrol(actionargs_t *);
 void A_Chase(actionargs_t *);
 void A_FaceTarget(actionargs_t *);
 void A_PosAttack(actionargs_t *);
@@ -1548,6 +1549,7 @@ deh_bexptr deh_bexptrs[] =
    POINTER(Fall),
    POINTER(XScream),
    POINTER(Look),
+   POINTER(Patrol),
    POINTER(Chase),
    POINTER(FaceTarget),
    POINTER(PosAttack),

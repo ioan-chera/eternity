@@ -145,6 +145,9 @@ thingtype Sergeant
   See:
     SPOS AABBCCDD 3 A_Chase
     loop
+  Patrol:
+    SPOS AAAABBBBCCCCDDDD 3 A_Patrol
+    loop
   Missile:
     SPOS E 10        A_FaceTarget
     SPOS F 10 bright A_SPosAttack

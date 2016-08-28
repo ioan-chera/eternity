@@ -43,6 +43,7 @@
 #include "p_info.h"
 #include "p_inter.h"
 #include "p_map.h"
+#include "p_map3d.h"
 #include "p_maputl.h"
 #include "p_mobj.h"
 #include "p_mobjcol.h"
@@ -97,22 +98,15 @@ void P_MakeSeeSound(Mobj *actor, pr_class_t rngnum)
    }
 }
 
-//
-// A_Look
-//
-// Stay in state until a player is sighted.
-//
-void A_Look(actionargs_t *actionargs)
+static void P_look(Mobj *actor, Mobj *sndtarget)
 {
-   Mobj *actor     = actionargs->actor;
-   Mobj *sndtarget = actor->subsector->sector->soundtarget;
    bool  allaround = false;
 
    // killough 7/18/98:
-   // Friendly monsters go after other monsters first, but 
+   // Friendly monsters go after other monsters first, but
    // also return to player, without attacking them, if they
    // cannot find any targets. A marine's best friend :)
-   
+
    actor->threshold = actor->pursuecount = 0;
 
    if(actor->flags4 & MF4_LOOKALLAROUND)
@@ -157,6 +151,237 @@ void A_Look(actionargs_t *actionargs)
    // go into chase state
    P_MakeSeeSound(actor, pr_see);
    P_SetMobjState(actor, actor->info->seestate);
+}
+
+static void P_patrol(Mobj *actor)
+{
+   // ioanch: Code mostly duplicated from P_Move
+
+   // haleyjd: OVER_UNDER:
+   // [RH] Instead of yanking non-floating monsters to the ground,
+   // let gravity drop them down, unless they're moving down a step.
+   if(P_Use3DClipping())
+   {
+      if(!(actor->flags & MF_FLOAT) && actor->z > actor->floorz &&
+         !(actor->intflags & MIF_ONMOBJ))
+      {
+         if (actor->z > actor->floorz + STEPSIZE)
+            return;
+         else
+            actor->z = actor->floorz;
+      }
+   }
+
+   // killough 10/98: make monsters get affected by ice and sludge too:
+
+   int movefactor = ORIG_FRICTION_FACTOR;    // killough 10/98
+   int friction = ORIG_FRICTION;
+   if(monster_friction)
+      movefactor = P_GetMoveFactor(actor, &friction);
+
+   int speed = (actor->info->speed + 1) / 2; // ceil(speed / 2)
+   if(friction < ORIG_FRICTION &&     // sludge
+      !(speed = ((ORIG_FRICTION_FACTOR - (ORIG_FRICTION_FACTOR-movefactor)/2)
+                 * speed) / ORIG_FRICTION_FACTOR))
+   {
+      speed = 1;      // always give the monster a little bit of speed
+   }
+
+   fixed_t tx = getThingX(actor, actor->tracer);
+   fixed_t ty = getThingY(actor, actor->tracer);
+   angle_t angle = P_PointToAngle(actor->x, actor->y, tx, ty);
+   actor->angle = angle;   // face goal
+   unsigned fineangle = angle >> ANGLETOFINESHIFT;
+   fixed_t deltax = FixedMul(speed * FRACUNIT, finecosine[fineangle]);
+   fixed_t deltay = FixedMul(speed * FRACUNIT, finesine[fineangle]);
+   fixed_t tryx = actor->x + deltax;
+   fixed_t tryy = actor->y + deltay;
+
+   // killough 12/98: rearrange, fix potential for stickiness on ice
+
+   bool try_ok;
+   if(friction <= ORIG_FRICTION)
+      try_ok = P_TryMove(actor, tryx, tryy, 0);
+   else
+   {
+      fixed_t x = actor->x;
+      fixed_t y = actor->y;
+      fixed_t floorz = actor->floorz;
+      fixed_t ceilingz = actor->ceilingz;
+      fixed_t dropoffz = actor->dropoffz;
+
+      try_ok = P_TryMove(actor, tryx, tryy, 0);
+
+      // killough 10/98:
+      // Let normal momentum carry them, instead of steptoeing them across ice.
+
+      if(try_ok)
+      {
+         P_UnsetThingPosition(actor);
+         actor->x = x;
+         actor->y = y;
+         actor->floorz = floorz;
+         actor->ceilingz = ceilingz;
+         actor->dropoffz = dropoffz;
+         P_SetThingPosition(actor);
+         movefactor *= FRACUNIT / ORIG_FRICTION_FACTOR / 4;
+         actor->momx += FixedMul(deltax, movefactor);
+         actor->momy += FixedMul(deltay, movefactor);
+      }
+   }
+
+   if(!try_ok)
+   {      // open any specials
+      int good;
+
+      if(actor->flags & MF_FLOAT && clip.floatok)
+      {
+         fixed_t savedz = actor->z;
+
+         if(actor->z < clip.floorz)          // must adjust height
+            actor->z += FLOATSPEED;
+         else
+            actor->z -= FLOATSPEED;
+
+         // haleyjd: OVER_UNDER:
+         // [RH] Check to make sure there's nothing in the way of the float
+         if(P_Use3DClipping())
+         {
+            if(P_TestMobjZ(actor))
+            {
+               actor->flags |= MF_INFLOAT;
+               return;
+            }
+            actor->z = savedz;
+         }
+         else
+         {
+            actor->flags |= MF_INFLOAT;
+            return;
+         }
+      }
+
+      if(!clip.numspechit)
+         return;
+
+#ifdef RANGECHECK
+      // haleyjd 01/09/07: SPECHIT_DEBUG
+      if(clip.numspechit < 0)
+         I_Error("P_Move: numspechit == %d\n", clip.numspechit);
+#endif
+
+      actor->movedir = DI_NODIR;
+
+      // if the special is not a door that can be opened, return false
+      //
+      // killough 8/9/98: this is what caused monsters to get stuck in
+      // doortracks, because it thought that the monster freed itself
+      // by opening a door, even if it was moving towards the doortrack,
+      // and not the door itself.
+      //
+      // killough 9/9/98: If a line blocking the monster is activated,
+      // return true 90% of the time. If a line blocking the monster is
+      // not activated, but some other line is, return false 90% of the
+      // time. A bit of randomness is needed to ensure it's free from
+      // lockups, but for most cases, it returns the correct result.
+      //
+      // Do NOT simply return false 1/4th of the time (causes monsters to
+      // back out when they shouldn't, and creates secondary stickiness).
+
+      for(good = false; clip.numspechit--; )
+      {
+         if(P_UseSpecialLine(actor, clip.spechit[clip.numspechit], 0))
+            good |= (clip.spechit[clip.numspechit] == clip.blockline ? 1 : 2);
+      }
+
+      // haleyjd 01/09/07: do not leave numspechit == -1
+      clip.numspechit = 0;
+
+      // haleyjd 04/11/10: wider compatibility range
+      if(!good || comp[comp_doorstuck]) // v1.9, or BOOM 2.01 compatibility
+         return;
+      else if(demo_version == 202) // BOOM 2.02
+         return;
+      else // MBF or higher
+         return;
+
+      /*
+       return good && (demo_version < 203 || comp[comp_doorstuck] ||
+       (P_Random(pr_opendoor) >= 230) ^ (good & 1));
+       */
+   }
+   else
+   {
+      actor->flags &= ~MF_INFLOAT;
+   }
+
+   // killough 11/98: fall more slowly, under gravity, if felldown==true
+   // haleyjd: OVER_UNDER: not while in 3D clipping mode
+   if(!P_Use3DClipping())
+   {
+      if(!(actor->flags & MF_FLOAT) && (!clip.felldown || demo_version < 203))
+      {
+         fixed_t oldz = actor->z;
+         actor->z = actor->floorz;
+
+         if(actor->z < oldz)
+            E_HitFloor(actor);
+      }
+   }
+
+   fixed_t touchdist = actor->radius + actor->tracer->radius;
+   if(D_abs(actor->x - tx) < touchdist && D_abs(actor->y - ty) < touchdist &&
+      actor->z + actor->height > actor->tracer->z &&
+      actor->z < actor->tracer->z + actor->tracer->height)
+   {
+      // touched it
+      Mobj *goal = P_FindMobjFromTID(actor->tracer->args[0], nullptr, nullptr);
+      if(goal)
+         P_SetTarget(&actor->tracer, goal);
+   }
+}
+
+void A_Patrol(actionargs_t *actionargs)
+{
+   Mobj *actor     = actionargs->actor;
+   Mobj *sndtarget = actor->subsector->sector->soundtarget;
+
+   if(!actor->tracer)
+   {
+      Mobj *goal = P_FindMobjFromTID(actor->args[0], nullptr, nullptr);
+      if(goal)
+         P_SetTarget(&actor->tracer, goal);
+   }
+   else
+   {
+      P_patrol(actor);
+   }
+
+   // Always be alert for monsters
+   P_look(actor, sndtarget);
+}
+
+//
+// A_Look
+//
+// Stay in state until a player is sighted.
+//
+void A_Look(actionargs_t *actionargs)
+{
+   Mobj *actor     = actionargs->actor;
+   Mobj *sndtarget = actor->subsector->sector->soundtarget;
+
+   if(!(actor->flags & MF_FRIEND))
+   {
+      const state_t *patrolstate = E_GetStateForMobj(actor, METASTATE_PATROL);
+      if(patrolstate && patrolstate->index != NullStateNum)
+      {
+         P_SetMobjState(actor, patrolstate->index);
+         return;
+      }
+   }
+
+   P_look(actor, sndtarget);
 }
 
 //

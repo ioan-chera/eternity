@@ -43,6 +43,7 @@ void A_Explode(actionargs_t *actionargs);
 void A_FaceTarget(actionargs_t *actionargs);
 void A_Fall(actionargs_t *actionargs);
 void A_Look(actionargs_t *actionargs);
+void A_Patrol(actionargs_t *actionargs);
 void A_Pain(actionargs_t *actionargs);
 
 #endif
