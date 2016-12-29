@@ -921,8 +921,68 @@ static bool Polyobj_clipThings(polyobj_t *po, line_t *line,
                   }
                   else
                   {
-                     Polyobj_pushThing(po, line, mo);
-                     hitthing = true;
+                     if(vec)
+                     {
+                        struct mchain_t
+                        {
+                           Mobj *mo;
+                           mchain_t *next;
+                        };
+
+                        Polyobj_removeFromBlockmap(po);
+                        bool tm = P_TryMove(mo, mo->x + vec->x, 
+                           mo->y + vec->y, 1);
+
+                        mchain_t *ohead, *head = estructalloc(mchain_t, 1);
+                        head->mo = mo;
+                        head->next = nullptr;
+
+                        int iterdefense = 0;
+                        while(!tm && clip.BlockingMobj && iterdefense++ <= 64)
+                        {
+                           ohead = head;
+                           head = estructalloc(mchain_t, 1);
+                           head->mo = clip.BlockingMobj;
+                           head->next = ohead;
+                           tm = P_TryMove(clip.BlockingMobj,
+                              clip.BlockingMobj->x + vec->x,
+                              clip.BlockingMobj->y + vec->y, 1);
+                           
+                        }
+                        while(head)
+                        {
+                           ohead = head;
+                           head = head->next;
+                           efree(ohead);
+                           if(head)
+                           {
+                              tm = tm && P_TryMove(head->mo,
+                                 head->mo->x + vec->x,
+                                 head->mo->y + vec->y, 1);
+                           }
+                        }
+                        Polyobj_linkToBlockmap(po);
+                        
+                        if(iterdefense > 64)
+                        {
+                           puts("warning iter defense!");
+                        }
+
+                        if(!tm)
+                        {
+                           if(po->damage && mo->flags & MF_SHOOTABLE)
+                           {
+                              P_DamageMobj(mo, nullptr, nullptr, po->damage,
+                                 MOD_CRUSH);
+                           }
+                           hitthing = true;
+                        }
+                     }
+                     else
+                     {
+                        Polyobj_pushThing(po, line, mo);
+                        hitthing = true;
+                     }
                   }
                }
                mo = next; // demo compatibility is not a factor here
