@@ -1808,6 +1808,9 @@
     <ClInclude Include="..\source\m_debug.h">
       <Filter>Source Files\M_\M_ Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\m_circbuf.h">
+      <Filter>Source Files\M_\M_ Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\ee.ico">
@@ -1824,6 +1827,7 @@
       <Filter>Tobii</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Eternity.rc" />

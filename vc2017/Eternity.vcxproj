@@ -1968,6 +1968,7 @@
     <ClInclude Include="..\source\mn_items.h" />
     <ClInclude Include="..\source\m_avltree.h" />
     <ClInclude Include="..\source\m_binary.h" />
+    <ClInclude Include="..\source\m_circbuf.h" />
     <ClInclude Include="..\source\m_compare.h" />
     <ClInclude Include="..\source\m_ctype.h" />
     <ClInclude Include="..\source\m_debug.h" />
