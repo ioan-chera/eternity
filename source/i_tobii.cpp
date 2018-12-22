@@ -131,9 +131,9 @@ static void I_log(void *log_context, tobii_log_level_t level, char const *text)
 
    // Keep them only to debug because they're really dense.
 #ifdef _DEBUG
-   char c = level == TOBII_LOG_LEVEL_ERROR ? 'E' : 
-      level == TOBII_LOG_LEVEL_WARN ? 'W' : 
-      level == TOBII_LOG_LEVEL_INFO ? 'I' : 
+   char c = level == TOBII_LOG_LEVEL_ERROR ? 'E' :
+      level == TOBII_LOG_LEVEL_WARN ? 'W' :
+      level == TOBII_LOG_LEVEL_INFO ? 'I' :
       level == TOBII_LOG_LEVEL_DEBUG ? 'D' : 'T';
    printf("Stream(%c): %s\n", c, text);
 #endif
@@ -179,7 +179,7 @@ static void I_gazePointCallback(const tobii_gaze_point_t *gaze_point, void *user
 //
 // Presence detection
 //
-static void I_userPresenceCallback(const tobii_user_presence_status_t status, 
+static void I_userPresenceCallback(const tobii_user_presence_status_t status,
    int64_t timestamp_us, void *user_data)
 {
    if(status == TOBII_USER_PRESENCE_STATUS_UNKNOWN)
@@ -224,7 +224,7 @@ bool I_EyeInit()
    tobii_error_t err = tobii_api_create(&api, &allocator, nullptr);
    if(err != TOBII_ERROR_NO_ERROR)
    {
-      usermsg("I_EyeInit: Failed initializing Stream Engine. %s", 
+      usermsg("I_EyeInit: Failed initializing Stream Engine. %s",
          tobii_error_message(err));
       return false;
    }
@@ -237,9 +237,9 @@ bool I_EyeInit()
 
    retryCooldown = gametic + CONN_RETRY_COOLDOWN;
    timesyncCooldown = gametic + TIMESYNC_SUCCESS_COOLDOWN;
-   
+
    startupmsg("I_EyeInit", "Loaded Stream Engine.");
-   
+
    return true;
 }
 
@@ -280,7 +280,7 @@ static bool I_checkGazeEvent(double &x, double &y)
       return false;
    if(rect.right == rect.left || rect.bottom == rect.top)
       return false;
-   
+
    //   printf("%g %g\n", gaze_point->position_xy[0], gaze_point->position_xy[1]);
 
    static int screenw, screenh;
@@ -345,7 +345,7 @@ void I_EyeGetEvent(double &x, double &y, bool &presence, unsigned &eventGot)
       else
          timesyncCooldown = gametic + TIMESYNC_SUCCESS_COOLDOWN;
    }
-   if(tobii_process_callbacks(dev) == TOBII_ERROR_CONNECTION_FAILED && 
+   if(tobii_process_callbacks(dev) == TOBII_ERROR_CONNECTION_FAILED &&
       tobii_reconnect(dev) == TOBII_ERROR_CONNECTION_FAILED)
    {
       tobii_device_destroy(dev);
