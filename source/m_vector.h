@@ -81,6 +81,33 @@ struct v3float_t
 struct v2double_t
 {
    double x, y;
+
+   v2double_t operator / (double scalar) const
+   {
+      return { x / scalar, y / scalar };
+   }
+
+   v2double_t &operator += (const v2double_t &other)
+   {
+      x += other.x;
+      y += other.y;
+      return *this;
+   }
+
+   v2double_t &operator /= (double scalar)
+   {
+      x /= scalar;
+      y /= scalar;
+      return *this;
+   }
+
+   // Chebyshev norm (usual in Doom)
+   double chebnorm() const
+   {
+      double fx = fabs(x);
+      double fy = fabs(y);
+      return fx > fy ? fx : fy;
+   }
 };
 
 struct v3double_t
