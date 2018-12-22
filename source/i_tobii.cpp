@@ -345,8 +345,8 @@ void I_EyeGetEvent(double &x, double &y, bool &presence, unsigned &eventGot)
       else
          timesyncCooldown = gametic + TIMESYNC_SUCCESS_COOLDOWN;
    }
-   if(tobii_process_callbacks(dev) == TOBII_ERROR_CONNECTION_FAILED &&
-      tobii_reconnect(dev) == TOBII_ERROR_CONNECTION_FAILED)
+   if(tobii_device_process_callbacks(dev) == TOBII_ERROR_CONNECTION_FAILED &&
+      tobii_device_reconnect(dev) == TOBII_ERROR_CONNECTION_FAILED)
    {
       tobii_device_destroy(dev);
       dev = nullptr;
