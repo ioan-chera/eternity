@@ -33,7 +33,7 @@ enum
 
 bool I_EyeInit();
 void I_EyeAttachToWindow();
-void I_EyeGetEvent(double &x, double &y, bool &presence, unsigned &eventGot);
+void I_EyeGetEvent(double &x, double &y, int64_t &timestamp_us, bool &presence, unsigned &eventGot);
 void I_EyeShutdown();
 
 #endif

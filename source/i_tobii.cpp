@@ -67,6 +67,7 @@ static struct
 {
    double x;
    double y;
+   int64_t timestamp_us;
    bool fired;
 } g_gazepoint;
 
@@ -174,6 +175,7 @@ static void I_gazePointCallback(const tobii_gaze_point_t *gaze_point, void *user
       return;
    g_gazepoint.x = gaze_point->position_xy[0];
    g_gazepoint.y = gaze_point->position_xy[1];
+   g_gazepoint.timestamp_us = gaze_point->timestamp_us;
    g_gazepoint.fired = true;
 }
 
@@ -295,7 +297,7 @@ void I_EyeAttachToWindow()
 //
 // Check the gaze event
 //
-static bool I_checkGazeEvent(double &x, double &y)
+static bool I_checkGazeEvent(double &x, double &y, int64_t &timestamp_us)
 {
    if(!g_gazepoint.fired)
       return false;
@@ -331,6 +333,7 @@ static bool I_checkGazeEvent(double &x, double &y)
 
    x = (g_gazepoint.x - rect.left) / (rect.right - rect.left);
    y = (g_gazepoint.y - rect.top) / (rect.bottom - rect.top);
+   timestamp_us = g_gazepoint.timestamp_us;
 
    return true;
 #endif
@@ -350,7 +353,7 @@ static bool I_checkPresenceEvent(bool &presence)
 //
 // Gets event data
 //
-void I_EyeGetEvent(double &x, double &y, bool &presence, unsigned &eventGot)
+void I_EyeGetEvent(double &x, double &y, int64_t &timestamp_us, bool &presence, unsigned &eventGot)
 {
    eventGot = 0;
    if(!dev)
@@ -381,7 +384,7 @@ void I_EyeGetEvent(double &x, double &y, bool &presence, unsigned &eventGot)
       return;  // try later
    }
 
-   if(I_checkGazeEvent(x, y))
+   if(I_checkGazeEvent(x, y, timestamp_us))
       eventGot |= EYE_EVENT_GAZE;
    if(I_checkPresenceEvent(presence))
       eventGot |= EYE_EVENT_PRESENCE;

@@ -513,12 +513,14 @@ static void I_GetEvent(SDL_Window *window)
    double etx, ety;
    bool present;
    unsigned gotEyeEvents;
-   I_EyeGetEvent(etx, ety, present, gotEyeEvents);
+   int64_t timestamp_us;
+   I_EyeGetEvent(etx, ety, timestamp_us, present, gotEyeEvents);
    if(gotEyeEvents & EYE_EVENT_GAZE)
    {
       eyeevent.data1 |= EV_EYE_GAZE;
       eyeevent.data2 = etx;
       eyeevent.data3 = ety;
+      eyeevent.timestamp_us = timestamp_us;
    }
    if(gotEyeEvents & EYE_EVENT_PRESENCE)
    {
