@@ -2152,7 +2152,8 @@
     <None Include="packages.config" />
     <None Include="res\ee.ico" />
     <None Include="Tobii\API-Reference.pdf" />
-    <None Include="Tobii\SDK-License.pdf" />
+    <None Include="Tobii\SDK-License_en.pdf" />
+    <None Include="Tobii\SDK-License_zh.pdf" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Eternity.rc" />
@@ -2176,12 +2177,12 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\Tobii.StreamEngine.Native.1.2.1.305\build\Tobii.StreamEngine.Native.targets" Condition="Exists('packages\Tobii.StreamEngine.Native.1.2.1.305\build\Tobii.StreamEngine.Native.targets')" />
+    <Import Project="packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets" Condition="Exists('packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\Tobii.StreamEngine.Native.1.2.1.305\build\Tobii.StreamEngine.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Tobii.StreamEngine.Native.1.2.1.305\build\Tobii.StreamEngine.Native.targets'))" />
+    <Error Condition="!Exists('packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Tobii.StreamEngine.Native.2.2.2.363\build\Tobii.StreamEngine.Native.targets'))" />
   </Target>
 </Project>
