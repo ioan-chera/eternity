@@ -89,7 +89,7 @@ fixed_t  viewx, viewy, viewz;
 angle_t  viewangle;
 fixed_t  viewcos, viewsin;
 fixed_t  viewpitch;
-player_t *viewplayer;
+const player_t *viewplayer;
 extern lighttable_t **walllights;
 bool     showpsprites = 1; //sf
 camera_t *viewcamera;
@@ -199,9 +199,9 @@ void R_SetSpanEngine(void)
 // FIXME: also check if Linux/GCC are affected by this.
 // MORE INFO: competn/doom/fp2-3655.lmp E2M3 fails here
 #if EE_CURRENT_PLATFORM == EE_PLATFORM_MACOSX && defined(__clang__)
-int R_PointOnSide(volatile fixed_t x, volatile fixed_t y, node_t *node)
+int R_PointOnSide(volatile fixed_t x, volatile fixed_t y, const node_t *node)
 #else
-int R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
+int R_PointOnSide(fixed_t x, fixed_t y, const node_t *node)
 #endif
 {
    if(!node->dx)
@@ -221,7 +221,7 @@ int R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
 
 // killough 5/2/98: reformatted
 
-int R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
+int R_PointOnSegSide(fixed_t x, fixed_t y, const seg_t *line)
 {
    fixed_t lx = line->v1->x;
    fixed_t ly = line->v1->y;
@@ -774,10 +774,40 @@ static void R_interpolateViewPoint(player_t *player, fixed_t lerp)
    }
    else
    {
-      viewx     = lerpCoord(lerp, player->mo->prevpos.x,     player->mo->x);
-      viewy     = lerpCoord(lerp, player->mo->prevpos.y,     player->mo->y);
-      viewz     = lerpCoord(lerp, player->prevviewz,         player->viewz);
-      viewangle = lerpAngle(lerp, player->mo->prevpos.angle, player->mo->angle);
+      viewz = lerpCoord(lerp, player->prevviewz, player->viewz);
+      const line_t *pline;
+      const linkdata_t *psec;
+      Mobj *thing = player->mo;
+
+      if((psec = thing->prevpos.ldata))
+      {
+         v2fixed_t orgtarg =
+         {
+            thing->x - psec->deltax,
+            thing->y - psec->deltay
+         };
+         viewx = lerpCoord(lerp, thing->prevpos.x, orgtarg.x);
+         viewy = lerpCoord(lerp, thing->prevpos.y, orgtarg.y);
+         if(((pline = thing->prevpos.portalline) &&
+             P_PointOnLineSide(viewx, viewy, pline)) ||
+            (!pline && FixedMul(viewz - psec->planez,
+                                player->prevviewz - psec->planez) < 0))
+         {
+            // Once it crosses it, we're done
+            thing->prevpos.portalline = nullptr;
+            thing->prevpos.ldata = nullptr;
+            thing->prevpos.x += psec->deltax;
+            thing->prevpos.y += psec->deltay;
+            viewx += psec->deltax;
+            viewy += psec->deltay;
+         }
+      }
+      else
+      {
+         viewx = lerpCoord(lerp, thing->prevpos.x, thing->x);
+         viewy = lerpCoord(lerp, thing->prevpos.y, thing->y);
+      }
+      viewangle = lerpAngle(lerp, thing->prevpos.angle, thing->angle);
       viewpitch = lerpAngle(lerp, player->prevpitch,         player->pitch);
    }
 }
@@ -795,6 +825,7 @@ static void R_interpolateViewPoint(camera_t *camera, fixed_t lerp)
       viewy     = camera->y;
       viewz     = camera->z;
       viewangle = camera->angle;
+      viewpitch = camera->pitch;
    }
    else
    {
@@ -802,6 +833,7 @@ static void R_interpolateViewPoint(camera_t *camera, fixed_t lerp)
       viewy     = lerpCoord(lerp, camera->prevpos.y,     camera->y);
       viewz     = lerpCoord(lerp, camera->prevpos.z,     camera->z);
       viewangle = lerpAngle(lerp, camera->prevpos.angle, camera->angle);
+      viewpitch = lerpAngle(lerp, camera->prevpitch, camera->pitch);
    }
 }
 
@@ -871,12 +903,13 @@ static void R_setSectorInterpolationState(secinterpstate_e state)
 }
 
 //
-// R_getLerp
+// R_GetLerp
 //
-static fixed_t R_getLerp()
+fixed_t R_GetLerp(bool ignorepause)
 {
+   // Interpolation must be disabled during pauses to avoid shaking, unless arg is set
    if(d_fastrefresh && d_interpolate &&
-      !(paused || ((menuactive || consoleactive) && !demoplayback && !netgame)))
+      (ignorepause || (!paused && ((!menuactive && !consoleactive) || demoplayback || netgame))))
       return i_haltimer.GetFrac();
    else
       return FRACUNIT;
@@ -888,7 +921,7 @@ static fixed_t R_getLerp()
 static void R_SetupFrame(player_t *player, camera_t *camera)
 {
    fixed_t  viewheightfrac;
-   fixed_t  lerp = R_getLerp();
+   fixed_t  lerp = R_GetLerp(false);
    
    // haleyjd 09/04/06: set or change column drawing engine
    // haleyjd 09/10/06: set or change span drawing engine
@@ -915,7 +948,7 @@ static void R_SetupFrame(player_t *player, camera_t *camera)
    }
    else
    {
-      R_interpolateViewPoint(camera, lerp);
+      R_interpolateViewPoint(camera, walkcam_active ? R_GetLerp(true) : lerp);
    }
 
    extralight = player->extralight;

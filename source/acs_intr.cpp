@@ -154,15 +154,15 @@ ACSEnvironment::ACSEnvironment() :
    // 136-137: ACSVM internal codes.
    addCodeDataACS0(138, {"",        1, addCallFunc(ACS_CF_SetGravity)});
    addCodeDataACS0(139, {"W",       0, addCallFunc(ACS_CF_SetGravity)});
- //addCodeDataACS0(140, {"",        1, addCallFunc(ACS_CF_SetAirControl)});
- //addCodeDataACS0(141, {"W",       0, addCallFunc(ACS_CF_SetAirControl)});
+   addCodeDataACS0(140, {"",        1, addCallFunc(ACS_CF_SetAirControl)});
+   addCodeDataACS0(141, {"W",       0, addCallFunc(ACS_CF_SetAirControl)});
  //addCodeDataACS0(142, {"",        0, addCallFunc(ACS_CF_ClrInventory)});
  //addCodeDataACS0(143, {"",        2, addCallFunc(ACS_CF_AddInventory)});
  //addCodeDataACS0(144, {"WSW",     0, addCallFunc(ACS_CF_AddInventory)});
- //addCodeDataACS0(145, {"",        2, addCallFunc(ACS_CF_SubInventory)});
- //addCodeDataACS0(146, {"WSW",     0, addCallFunc(ACS_CF_SubInventory)});
- //addCodeDataACS0(147, {"",        1, addCallFunc(ACS_CF_GetInventory)});
- //addCodeDataACS0(148, {"WS",      0, addCallFunc(ACS_CF_GetInventory)});
+   addCodeDataACS0(145, {"",        2, addCallFunc(ACS_CF_SubInventory)});
+   addCodeDataACS0(146, {"WSW",     0, addCallFunc(ACS_CF_SubInventory)});
+   addCodeDataACS0(147, {"",        1, addCallFunc(ACS_CF_GetInventory)});
+   addCodeDataACS0(148, {"WS",      0, addCallFunc(ACS_CF_GetInventory)});
    addCodeDataACS0(149, {"",        6, addCallFunc(ACS_CF_SpawnPoint)});
    addCodeDataACS0(150, {"WSWWWWW", 0, addCallFunc(ACS_CF_SpawnPoint)});
    addCodeDataACS0(151, {"",        4, addCallFunc(ACS_CF_SpawnSpot)});
@@ -360,9 +360,18 @@ ACSEnvironment::ACSEnvironment() :
  //addFuncDataACS0( 89, addCallFunc(ACS_CF_SetThingRoll));
  //addFuncDataACS0( 90, addCallFunc(ACS_CF_GetThingRoll));
  //addFuncDataACS0( 91, addCallFunc(ACS_CF_QuakeEx));
+ //addFuncDataACS0( 92, addCallFunc(ACS_CF_Warp));
+ //addFuncDataACS0( 93, addCallFunc(ACS_CF_GetMaxInventory));
+ //addFuncDataACS0( 94, addCallFunc(ACS_CF_SetSectorDamage));
+ //addFuncDataACS0( 95, addCallFunc(ACS_CF_SetSectorTerrain));
+ //addFuncDataACS0( 96, addCallFunc(ACS_CF_SpawnParticle));
+ //addFuncDataACS0( 97, addCallFunc(ACS_CF_SetMusicVolume));
+   addFuncDataACS0( 98, addCallFunc(ACS_CF_CheckProximity));
+ //addFuncDataACS0( 99, addCallFunc(ACS_CF_CheckActorState));
 
    addFuncDataACS0(300, addCallFunc(ACS_CF_GetLineX));
    addFuncDataACS0(301, addCallFunc(ACS_CF_GetLineY));
+   addFuncDataACS0(302, addCallFunc(ACS_CF_SetAirFriction));
 }
 
 //
@@ -877,7 +886,7 @@ protected:
       // Read single byte from source.
       if(!in || in->read(buf, 1) != 1) return EOF;
       setg(buf, buf, buf + 1);
-      return buf[0];
+      return static_cast<unsigned char>(buf[0]);
    }
 
    char buf[1];

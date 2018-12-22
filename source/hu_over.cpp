@@ -37,6 +37,7 @@
 #include "doomstat.h"
 #include "e_fonts.h"
 #include "e_inventory.h"
+#include "e_weapons.h"
 #include "g_game.h"
 #include "hu_frags.h"
 #include "hu_over.h"
@@ -121,33 +122,33 @@ enum
 #define hu_player (players[displayplayer])
 
 // Get the player's ammo for the given weapon, or 0 if am_noammo
-static int wc_pammo(int w)
+static int wc_pammo(weaponinfo_t *w)
 {
-   return E_GetItemOwnedAmount(&hu_player, weaponinfo[w].ammo);
+   return E_GetItemOwnedAmount(&hu_player, w->ammo);
 }
 
 // Determine if the player has enough ammo for one shot with the given weapon
-static bool wc_noammo(int w)
+static bool wc_noammo(weaponinfo_t *w)
 {
    bool outofammo = false;
-   itemeffect_t *ammo = weaponinfo[w].ammo;
+   itemeffect_t *ammo = w->ammo;
 
    // no-ammo weapons are always considered to have ammo
    if(ammo)
    {
       int amount = E_GetItemOwnedAmount(&hu_player, ammo);
       if(amount)
-         outofammo = (amount < weaponinfo[w].ammopershot);
+         outofammo = (amount < w->ammopershot);
    }
 
    return outofammo;
 }
 
 // Get the player's maxammo for the given weapon, or 0 if am_noammo
-static int wc_mammo(int w)
+static int wc_mammo(weaponinfo_t *w)
 {
    int amount = 0;
-   itemeffect_t *ammo = weaponinfo[w].ammo;
+   itemeffect_t *ammo = w->ammo;
 
    if(ammo)
       amount = E_GetMaxAmountForArtifact(&hu_player, ammo);
@@ -156,7 +157,7 @@ static int wc_mammo(int w)
 }
 
 // Determine the color to use for the given weapon's number and ammo bar/count
-static char weapcolor(int w)
+static char weapcolor(weaponinfo_t *w)
 {
    int  maxammo = wc_mammo(w);
    bool noammo  = wc_noammo(w);
@@ -229,7 +230,7 @@ void HU_LoadFont()
 // sf: write a text line to x, y
 // haleyjd 01/14/05: now uses vfont engine
 //
-void HU_WriteText(const char *s, int x, int y)
+static void HU_WriteText(const char *s, int x, int y)
 {
    if(hu_fontloaded)
       V_FontWriteText(hud_overfont, s, x, y, &subscreen43);
@@ -420,10 +421,10 @@ static void HU_drawWeapons(int x, int y)
   
    for(int i = 0; i < NUMWEAPONS; i++)
    {
-      if(hu_player.weaponowned[i])
+      if(E_PlayerOwnsWeaponForDEHNum(&hu_player, i))
       {
          // got it
-         fontcolor = weapcolor(i);
+         fontcolor = weapcolor(E_WeaponForDEHNum(i));
          tempstr << static_cast<char>(fontcolor) << (i + 1) << ' ';
       }
    }
@@ -497,12 +498,12 @@ static void HU_drawStatus(int x, int y)
 //
 static void HU_overlaySetup()
 {
-   int i, x, y;
+   int x, y;
 
    // decide where to put all the widgets
-   
-   for(i = 0; i < NUMOVERLAY; i++)
-      overlay[i].x = 1;       // turn em all on
+
+   for(overlay_t &curroverlay : overlay)
+      curroverlay.x = 1;       // turn em all on
 
    // turn off status if we aren't using it
    if(hud_hidestatus)
@@ -516,19 +517,19 @@ static void HU_overlaySetup()
       overlay[ol_frag].x = -1;
 
    // now build according to style
-   
+
    switch(hud_overlaystyle)
-   {      
+   {
    case HUD_OFF:       // 'off'
    case HUD_GRAPHICAL: // 'graphical' -- haleyjd 01/11/05: this is handled by status bar
-      for(i = 0; i < NUMOVERLAY; i++)         
+      for(int i = 0; i < NUMOVERLAY; i++)
          setol(i, -1, -1); // turn it off
       break;
-      
+
    case HUD_BOOM: // 'bottom left' / 'BOOM' style
       y = SCREENHEIGHT - 8;
 
-      for(i = NUMOVERLAY - 1; i >= 0; --i)
+      for(int i = NUMOVERLAY - 1; i >= 0; --i)
       {
          if(overlay[i].x != -1)
          {
@@ -537,13 +538,13 @@ static void HU_overlaySetup()
          }
       }
       break;
-      
+
    case HUD_FLAT: // all at bottom of screen
-      x = 160; 
+      x = 160;
       y = SCREENHEIGHT - 8;
 
       // haleyjd 06/14/06: rewrote to restore a sensible ordering
-      for(i = NUMOVERLAY - 1; i >= 0; --i)
+      for(int i = NUMOVERLAY - 1; i >= 0; --i)
       {
          if(overlay[i].x != -1)
          {
@@ -563,7 +564,7 @@ static void HU_overlaySetup()
       setol(ol_armor,  SCREENWIDTH-138,   8);
       setol(ol_weap,   SCREENWIDTH-138, 184);
       setol(ol_ammo,   SCREENWIDTH-138, 192);
-      
+
       if(GameType == gt_dm)  // if dm, put frags in place of keys
          setol(ol_frag, 0, 192);
       else
@@ -617,15 +618,15 @@ void HU_DisableHUD()
 void HU_OverlayDraw()
 {
    // SoM 2-4-04: ANYRES
-   if(viewwindow.height != video.height || automapactive || !hud_enabled) 
+   if(viewwindow.height != video.height || automapactive || !hud_enabled)
       return;  // fullscreen only
-  
+
    HU_overlaySetup();
-   
-   for(int i = 0; i < NUMOVERLAY; i++)
+
+   for(overlay_t &curroverlay : overlay)
    {
-      if(overlay[i].x != -1)
-         overlay[i].drawer(overlay[i].x, overlay[i].y);
+      if(curroverlay.x != -1)
+         curroverlay.drawer(curroverlay.x, curroverlay.y);
    }
 }
 

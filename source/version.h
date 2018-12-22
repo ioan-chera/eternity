@@ -20,7 +20,7 @@
 #ifndef VERSION_H__
 #define VERSION_H__
 
-#define VERSION_MIN_EYETRACK 400 // special version for eyetracking builds
+#define VERSION_MIN_EYETRACK 450 // special version for eyetracking builds
 
 // DOOM version
 // enum { VERSION =  203 };

@@ -1,7 +1,5 @@
-// Emacs style mode select   -*- C++ -*-
-//-----------------------------------------------------------------------------
 //
-// Copyright(C) 2012 James Haley
+// Copyright(C) 2017 James Haley, Max Waine, et al.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -89,7 +87,7 @@ static void RegisterSong(void *data, size_t size)
       UnregisterSong();
 
    rw    = SDL_RWFromMem(data, size);
-   music = Mix_LoadMUS_RW(rw);
+   music = Mix_LoadMUS_RW(rw, true);
 }
 
 //
@@ -358,6 +356,29 @@ static bool MidiRPC_InitServer()
    return !status;
 }
 
+// FIXME: When we finally axe XP support we can remove all this Windows 10 nonsense
+// as we can just #include <versionhelper.h>
+#ifndef _WIN32_WINNT_WIN10
+#define _WIN32_WINNT_WIN10 0x0A00
+#endif
+
+//
+// Checks if Windows version is 10 or higher, for audio kludge
+//
+bool I_IsWindows10OrHigher()
+{
+   OSVERSIONINFOEXW osvi = { sizeof(osvi) };
+   const DWORDLONG dwlConditionMask =
+      VerSetConditionMask(
+         VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+      VER_MINORVERSION, VER_GREATER_EQUAL);
+   osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_WIN10);
+   osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_WIN10);
+   osvi.wServicePackMajor = 1;
+
+   return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask) != FALSE;
+}
+
 //=============================================================================
 //
 // Main Program
@@ -368,12 +389,17 @@ static bool MidiRPC_InitServer()
 //
 // Application entry point.
 //
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, 
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                      LPSTR lpCmdLine, int nCmdShow)
 {
    // Initialize SDL
    if(!InitSDL())
       return -1;
+
+   if(I_IsWindows10OrHigher())
+      SDL_setenv("SDL_AUDIODRIVER", "directsound", true);
+   else
+      SDL_setenv("SDL_AUDIODRIVER", "winmm", true);
 
    // Initialize RPC Server
    if(!MidiRPC_InitServer())

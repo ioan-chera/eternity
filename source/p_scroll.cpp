@@ -220,7 +220,7 @@ void ScrollThinker::RemoveAllScrollers()
 //
 // Stop a scroller based on sector number
 //
-bool EV_stopFlatScrollerBySecnum(int type, int secnum)
+static bool EV_stopFlatScrollerBySecnum(int type, int secnum)
 {
    if(!scrollers)
       return false;
@@ -256,7 +256,7 @@ bool EV_stopFlatScrollerBySecnum(int type, int secnum)
 // accel: non-zero if this is an accelerative effect
 //
 void Add_Scroller(int type, fixed_t dx, fixed_t dy,
-                  int control, int affectee, int accel, bool acs)
+                  int control, int affectee, int accel, bool overridescroller)
 {
    ScrollThinker *s = new ScrollThinker;
 
@@ -274,7 +274,7 @@ void Add_Scroller(int type, fixed_t dx, fixed_t dy,
 
    if(type != ScrollThinker::sc_side)
    {
-      if(acs)
+      if(overridescroller)
          EV_stopFlatScrollerBySecnum(type, affectee);
       s->addScroller();
    }
