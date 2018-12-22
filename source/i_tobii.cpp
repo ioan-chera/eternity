@@ -30,6 +30,7 @@
 #include "doomstat.h"
 #include "hal/i_platform.h"
 #include "i_tobii.h"
+#include "m_qstr.h"
 #include "v_misc.h"
 
 #if EE_CURRENT_PLATFORM == EE_PLATFORM_WINDOWS
@@ -189,13 +190,39 @@ static void I_userPresenceCallback(const tobii_user_presence_status_t status,
 }
 
 //
+// Find the device
+//
+static void IEN_findDevice(char const* url, void* user_data)
+{
+   auto str = static_cast<qstring *>(user_data);
+   if(str->empty())
+      *str = url;
+}
+
+//
 // Tries to find a device if none available
 //
 static bool I_findDevice(tobii_error_t *outErr = nullptr)
 {
    if(dev)
       return false;  // already in
-   tobii_error_t err = tobii_device_create(api, nullptr, &dev);
+   qstring url;
+   tobii_error_t err = tobii_enumerate_local_device_urls(api, IEN_findDevice, &url);
+   if(err != TOBII_ERROR_NO_ERROR)
+   {
+      if(outErr)
+         *outErr = err;
+      return false;
+   }
+
+   if(url.empty())
+   {
+      if(outErr)
+         *outErr = TOBII_ERROR_NOT_AVAILABLE;
+      return false;
+   }
+
+   err = tobii_device_create(api, url.constPtr(), &dev);
    if(err != TOBII_ERROR_NO_ERROR)
    {
       if(outErr)
