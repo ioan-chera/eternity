@@ -67,7 +67,7 @@ static struct
    double x;
    double y;
    bool fired;
-} g_event;
+} g_gazepoint;
 
 //
 // If present
@@ -171,9 +171,9 @@ static void I_gazePointCallback(const tobii_gaze_point_t *gaze_point, void *user
 {
    if(gaze_point->validity != TOBII_VALIDITY_VALID)
       return;
-   g_event.x = gaze_point->position_xy[0];
-   g_event.y = gaze_point->position_xy[1];
-   g_event.fired = true;
+   g_gazepoint.x = gaze_point->position_xy[0];
+   g_gazepoint.y = gaze_point->position_xy[1];
+   g_gazepoint.fired = true;
 }
 
 //
@@ -270,9 +270,9 @@ void I_EyeAttachToWindow()
 //
 static bool I_checkGazeEvent(double &x, double &y)
 {
-   if(!g_event.fired)
+   if(!g_gazepoint.fired)
       return false;
-   g_event.fired = false;
+   g_gazepoint.fired = false;
 
 #if EE_CURRENT_PLATFORM == EE_PLATFORM_WINDOWS
    RECT rect;
@@ -299,11 +299,11 @@ static bool I_checkGazeEvent(double &x, double &y)
       if(!screenw || !screenh)
          return false;
    }
-   g_event.x *= screenw;
-   g_event.y *= screenh;
+   g_gazepoint.x *= screenw;
+   g_gazepoint.y *= screenh;
 
-   x = (g_event.x - rect.left) / (rect.right - rect.left);
-   y = (g_event.y - rect.top) / (rect.bottom - rect.top);
+   x = (g_gazepoint.x - rect.left) / (rect.right - rect.left);
+   y = (g_gazepoint.y - rect.top) / (rect.bottom - rect.top);
 
    return true;
 #endif
