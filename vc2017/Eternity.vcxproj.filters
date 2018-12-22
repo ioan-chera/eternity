@@ -241,6 +241,9 @@
     <Filter Include="Tobii">
       <UniqueIdentifier>{70bde44d-4f34-481b-aac7-7e9c1dbdb469}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Eye">
+      <UniqueIdentifier>{fd6af279-131a-41de-bdde-17e11a0415d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\acs_func.cpp">
@@ -1016,6 +1019,9 @@
     </ClCompile>
     <ClCompile Include="..\source\m_debug.cpp">
       <Filter>Source Files\M_\M_ Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\eye_fixation.cpp">
+      <Filter>Source Files\Eye</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1810,6 +1816,9 @@
     </ClInclude>
     <ClInclude Include="..\source\m_circbuf.h">
       <Filter>Source Files\M_\M_ Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\eye_fixation.h">
+      <Filter>Source Files\Eye</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
