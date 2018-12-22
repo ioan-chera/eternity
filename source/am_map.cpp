@@ -39,6 +39,7 @@
 #include "e_exdata.h"
 #include "e_inventory.h"
 #include "ev_specials.h"
+#include "eye_fixation.h"
 #include "g_bind.h"
 #include "p_maputl.h"
 #include "p_portal.h"
@@ -235,6 +236,8 @@ static int  lightlev;        // used for funky strobing effect
 static int  amclock;
 
 static mpoint_t m_paninc;    // how far the window pans each tic (map coords)
+static mpoint_t m_moveinstant;   // move instant requirement
+static bool m_moveinstant_active;   // this must be true to really move instant
 static double mtof_zoommul; // how far the window zooms each tic (map coords)
 static double ftom_zoommul; // how far the window zooms each tic (fb coords)
 
@@ -504,8 +507,17 @@ static void AM_changeWindowLoc()
       f_oldloc.x = D_MAXINT;
    }
    
-   m_x += m_paninc.x;
-   m_y += m_paninc.y;
+   if(m_moveinstant_active)
+   {
+      m_moveinstant_active = false;
+      m_x = m_moveinstant.x - m_w / 2;
+      m_y = m_moveinstant.y - m_h / 2;
+   }
+   else
+   {
+      m_x += m_paninc.x;
+      m_y += m_paninc.y;
+   }
    
    if(m_x + m_w/2 > max_x)
       m_x = max_x - m_w/2;
@@ -546,6 +558,7 @@ static void AM_initVariables()
    lightlev = 0;
    
    m_paninc.x = m_paninc.y = 0;
+   m_moveinstant_active = false;
    ftom_zoommul = 1.0;
    mtof_zoommul = 1.0;
    
@@ -810,6 +823,7 @@ bool AM_Responder(const event_t *ev)
    else
    {
       // handle end of pan or zoom on keyup
+      static Fixation fixation(400000);
       if(ev->type == ev_keyup)
       {
          switch(action)
@@ -833,10 +847,33 @@ bool AM_Responder(const event_t *ev)
             return true;
          }
       }
+      else if(ev->type == ev_eyetracking && ev->data1 & EV_EYE_GAZE && !followplayer && 
+         !m_paninc.x && !m_paninc.y)
+      {
+         // If follow mode is off and user fixates to a position, pan there and stop
+         edefstructvar(gazeevent_t, event);
+         event.point.x = ev->data2;
+         event.point.y = ev->data3;
+         event.timestamp_us = ev->timestamp_us;
+         fixation.push(event);
+         v2double_t point;
+         if(fixation.get(point))
+         {
+            point.y = 1. - (25. / 21) * point.y;
+            // must get the point at given
+            fixation.clear();
+
+            m_moveinstant.x = m_x + m_w * point.x;
+            m_moveinstant.y = m_y + m_h * point.y;
+            m_moveinstant_active = true;
+         }
+      }
 
       // all other events are keydown only
       if(ev->type != ev_keydown)
          return false;
+
+      fixation.clear(); // clear the fixation
 
       static int bigstate = 0;
 
@@ -1026,7 +1063,7 @@ void AM_Ticker()
       AM_changeWindowScale();
    
    // Change x,y location
-   if(m_paninc.x != 0.0 || m_paninc.y != 0.0)
+   if(m_paninc.x != 0.0 || m_paninc.y != 0.0 || m_moveinstant_active)
       AM_changeWindowLoc();
 
    backdrop_fx += MTOF(m_x + m_w / 2 - oldmx);
