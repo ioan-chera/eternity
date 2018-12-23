@@ -82,6 +82,11 @@ struct v2double_t
 {
    double x, y;
 
+   v2double_t operator - (const v2double_t &other) const
+   {
+      return { x - other.x, y - other.y };
+   }
+
    v2double_t operator / (double scalar) const
    {
       return { x / scalar, y / scalar };
@@ -107,6 +112,11 @@ struct v2double_t
       double fx = fabs(x);
       double fy = fabs(y);
       return fx > fy ? fx : fy;
+   }
+
+   double abs() const
+   {
+      return sqrt(x * x + y * y);
    }
 };
 

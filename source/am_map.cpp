@@ -245,6 +245,14 @@ static double ftom_zoommul; // how far the window zooms each tic (fb coords)
 static double m_x,  m_y;    // LL x,y window location on the map (map coords)
 static double m_x2, m_y2;   // UR x,y window location on the map (map coords)
 
+// Animation stuff
+struct amPanAnimation_t
+{
+   v2double_t step;
+   int tics;
+};
+static amPanAnimation_t amPanAnimation;
+
 // coordinates of backdrop. Separate from m_x and m_y because of zooming.
 static double backdrop_fx, backdrop_fy;
 
@@ -305,6 +313,7 @@ static bool am_usebackdrop = false;
 
 // Automap eye cursor
 static mpoint_t amEyeCursorPosition = { DBL_MAX, 0 };
+static bool amEyeCursorUpdated;
 static int amEyeCursorLump = -1;
 
 // haleyjd 08/01/09: this function is unused
@@ -498,6 +507,25 @@ static void AM_findMinMaxBoundaries()
 }
 
 //
+// Updates other map coordinates after panning
+//
+static void AM_updateMapCoordinates()
+{
+   if(m_x + m_w / 2 > max_x)
+      m_x = max_x - m_w / 2;
+   else if(m_x + m_w / 2 < min_x)
+      m_x = min_x - m_w / 2;
+
+   if(m_y + m_h / 2 > max_y)
+      m_y = max_y - m_h / 2;
+   else if(m_y + m_h / 2 < min_y)
+      m_y = min_y - m_h / 2;
+
+   m_x2 = m_x + m_w;
+   m_y2 = m_y + m_h;
+}
+
+//
 // AM_changeWindowLoc()
 //
 // Moves the map window by the global variables m_paninc.x, m_paninc.y
@@ -523,19 +551,7 @@ static void AM_changeWindowLoc()
       m_x += m_paninc.x;
       m_y += m_paninc.y;
    }
-   
-   if(m_x + m_w/2 > max_x)
-      m_x = max_x - m_w/2;
-   else if(m_x + m_w/2 < min_x)
-      m_x = min_x - m_w/2;
-   
-   if(m_y + m_h/2 > max_y)
-      m_y = max_y - m_h/2;
-   else if(m_y + m_h/2 < min_y)
-      m_y = min_y - m_h/2;
-   
-   m_x2 = m_x + m_w;
-   m_y2 = m_y + m_h;
+   AM_updateMapCoordinates();
 }
 
 extern void ST_AutomapEvent(int type);
@@ -858,7 +874,9 @@ bool AM_Responder(const event_t *ev)
       else if(ev->type == ev_eyetracking && ev->data1 & EV_EYE_GAZE)
       {
          amEyeCursorPosition = { ev->data2, ev->data3 };
+         amEyeCursorUpdated = true;
 
+#if 0
          if(!followplayer && !m_paninc.x && !m_paninc.y)
          {
             // If follow mode is off and user fixates to a position, pan there and stop
@@ -879,6 +897,7 @@ bool AM_Responder(const event_t *ev)
                m_moveinstant_active = true;
             }
          }
+#endif
       }
 
       // all other events are keydown only
@@ -1077,6 +1096,15 @@ void AM_Ticker()
    // Change x,y location
    if(m_paninc.x != 0.0 || m_paninc.y != 0.0 || m_moveinstant_active)
       AM_changeWindowLoc();
+
+   if(amPanAnimation.tics)
+   {
+      followplayer = false;
+      m_x += amPanAnimation.step.x;
+      m_y += amPanAnimation.step.y;
+      --amPanAnimation.tics;
+      AM_updateMapCoordinates();
+   }
 
    backdrop_fx += MTOF(m_x + m_w / 2 - oldmx);
    backdrop_fy += MTOF(m_y + m_h / 2 - oldmy);
@@ -2340,7 +2368,7 @@ static void AM_drawMarks()
 //
 static void AM_drawEyeCursor()
 {
-   if(amEyeCursorPosition.x == DBL_MAX || amEyeCursorLump < 0)
+   if(!amEyeCursorUpdated || amEyeCursorLump < 0)
       return;
    patch_t *patch = PatchLoader::CacheNum(wGlobalDir, amEyeCursorLump, PU_CACHE);
    int fx = int(round(SCREENWIDTH * amEyeCursorPosition.x)) - patch->width / 2;
@@ -2349,7 +2377,7 @@ static void AM_drawEyeCursor()
 
    byte jackson = 64;
    V_DrawBlock(fx + patch->width / 2, fy + patch->height / 2, &vbscreen, 1, 1, &jackson);
-   amEyeCursorPosition.x = DBL_MAX; // clear it for this stage
+   amEyeCursorUpdated = false;
 }
 
 //
@@ -2414,6 +2442,21 @@ CONSOLE_VARIABLE(am_drawnodelines, am_drawnodelines, 0) {}
 
 VARIABLE_TOGGLE(am_dynasegs_bysubsec, NULL, yesno);
 CONSOLE_VARIABLE(am_dynasegs_bysubsec, am_dynasegs_bysubsec, 0) {}
+
+//
+// Pan automap to gaze point
+//
+CONSOLE_COMMAND(am_movetogaze, 0)
+{
+   if(!automapactive)
+      return;
+   v2double_t targpos = { m_x + m_w * amEyeCursorPosition.x, m_y + m_h * (1 - amEyeCursorPosition.y * (25./21)) };
+   v2double_t curpos = { m_x + m_w / 2, m_y + m_h / 2 };
+   amPanAnimation.step = targpos - curpos;
+   double distance = amPanAnimation.step.abs();
+   if((amPanAnimation.tics = int(distance / FTOM(VERT_PAN_SCALE(F_PANINC)) / 2)))
+      amPanAnimation.step /= amPanAnimation.tics;
+}
 
 //----------------------------------------------------------------------------
 //

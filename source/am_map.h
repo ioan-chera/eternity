@@ -26,7 +26,7 @@
 #ifndef __AMMAP_H__
 #define __AMMAP_H__
 
-#include "m_fixed.h"
+#include "m_vector.h"
 
 // Used by ST StatusBar stuff.
 enum
@@ -62,10 +62,7 @@ void AM_clearMarks(void);
 class Mobj;
 void AM_Coordinates(const Mobj *mo, fixed_t &x, fixed_t &y, fixed_t &z);
 
-typedef struct mpoint_s
-{
-   double x, y;
-} mpoint_t;
+typedef v2double_t mpoint_t;
 
 extern mpoint_t *markpoints;
 extern int markpointnum, markpointnum_max;
