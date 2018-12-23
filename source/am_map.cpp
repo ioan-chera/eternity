@@ -49,6 +49,7 @@
 #include "r_draw.h"
 #include "r_dynseg.h"
 #include "r_main.h"
+#include "r_patch.h"
 #include "r_portal.h"
 #include "r_state.h"
 #include "v_block.h"
@@ -301,6 +302,10 @@ static bool am_needbackscreen; // haleyjd 05/03/13
 // backdrop
 static byte *am_backdrop = NULL;
 static bool am_usebackdrop = false;
+
+// Automap eye cursor
+static mpoint_t amEyeCursorPosition = { DBL_MAX, 0 };
+static int amEyeCursorLump = -1;
 
 // haleyjd 08/01/09: this function is unused
 #if 0
@@ -612,6 +617,9 @@ static void AM_loadPics()
       marknums[i] = PatchLoader::CacheName(wGlobalDir, namebuf, PU_STATIC);
    }
 
+   // Eyetracking
+   amEyeCursorLump = W_CheckNumForName("CROSS1");
+
    // haleyjd 12/22/02: automap background support (raw format)
    if((lumpnum = W_CheckNumForName("AUTOPAGE")) != -1)
    {
@@ -847,25 +855,29 @@ bool AM_Responder(const event_t *ev)
             return true;
          }
       }
-      else if(ev->type == ev_eyetracking && ev->data1 & EV_EYE_GAZE && !followplayer && 
-         !m_paninc.x && !m_paninc.y)
+      else if(ev->type == ev_eyetracking && ev->data1 & EV_EYE_GAZE)
       {
-         // If follow mode is off and user fixates to a position, pan there and stop
-         edefstructvar(gazeevent_t, event);
-         event.point.x = ev->data2;
-         event.point.y = ev->data3;
-         event.timestamp_us = ev->timestamp_us;
-         fixation.push(event);
-         v2double_t point;
-         if(fixation.get(point))
-         {
-            point.y = 1. - (25. / 21) * point.y;
-            // must get the point at given
-            fixation.clear();
+         amEyeCursorPosition = { ev->data2, ev->data3 };
 
-            m_moveinstant.x = m_x + m_w * point.x;
-            m_moveinstant.y = m_y + m_h * point.y;
-            m_moveinstant_active = true;
+         if(!followplayer && !m_paninc.x && !m_paninc.y)
+         {
+            // If follow mode is off and user fixates to a position, pan there and stop
+            edefstructvar(gazeevent_t, event);
+            event.point.x = ev->data2;
+            event.point.y = ev->data3;
+            event.timestamp_us = ev->timestamp_us;
+            fixation.push(event);
+            v2double_t point;
+            if(fixation.get(point))
+            {
+               point.y = 1. - (25. / 21) * point.y;
+               // must get the point at given
+               fixation.clear();
+
+               m_moveinstant.x = m_x + m_w * point.x;
+               m_moveinstant.y = m_y + m_h * point.y;
+               m_moveinstant_active = true;
+            }
          }
       }
 
@@ -2324,6 +2336,23 @@ static void AM_drawMarks()
 }
 
 //
+// Draws the eye-controlled cursor, if applicable
+//
+static void AM_drawEyeCursor()
+{
+   if(amEyeCursorPosition.x == DBL_MAX || amEyeCursorLump < 0)
+      return;
+   patch_t *patch = PatchLoader::CacheNum(wGlobalDir, amEyeCursorLump, PU_CACHE);
+   int fx = int(round(SCREENWIDTH * amEyeCursorPosition.x)) - patch->width / 2;
+   int fy = int(round(SCREENHEIGHT * amEyeCursorPosition.y)) - patch->height / 2;
+   V_DrawPatchTranslated(fx, fy, &vbscreen, patch, cr_blue, false);
+
+   byte jackson = 64;
+   V_DrawBlock(fx + patch->width / 2, fy + patch->height / 2, &vbscreen, 1, 1, &jackson);
+   amEyeCursorPosition.x = DBL_MAX; // clear it for this stage
+}
+
+//
 // AM_drawCrosshair()
 //
 // Draw the single point crosshair representing map center
@@ -2354,6 +2383,8 @@ void AM_Drawer()
    
    if(automap_grid)                 // killough 2/28/98: change var name
       AM_drawGrid(mapcolor_grid);   //jff 1/7/98 grid default color
+
+   AM_drawEyeCursor();
    
    AM_drawWalls();
 
