@@ -831,7 +831,7 @@ bool AM_Responder(const event_t *ev)
    else
    {
       // handle end of pan or zoom on keyup
-      static Fixation fixation(400000);
+      static Fixation fixation(800000);
       if(ev->type == ev_keyup)
       {
          switch(action)
