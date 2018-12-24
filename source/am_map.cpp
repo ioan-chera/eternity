@@ -1779,7 +1779,7 @@ static bool AM_mapPointGazed(v2fixed_t point)
 static void AM_drawVisitedVerts(const line_t &line, const mline_t &l, int colour)
 {
    static mline_t l2;
-   if(amVertexVisit[line.v1 - vertexes] && AM_mapPointGazed({ line.v1->x, line.v1->y }))
+   if(amVertexVisit[line.v1 - vertexes] == 1 && AM_mapPointGazed({ line.v1->x, line.v1->y }))
    {
       l2.a.x = l.a.x - FTOM(4);
       l2.a.y = l.a.y - FTOM(4);
@@ -1792,7 +1792,7 @@ static void AM_drawVisitedVerts(const line_t &line, const mline_t &l, int colour
       l2.b.y = l.a.y + FTOM(4);
       AM_drawMline(&l2, colour);
    }
-   if(amVertexVisit[line.v2 - vertexes] && AM_mapPointGazed({ line.v2->x, line.v2->y }))
+   if(amVertexVisit[line.v2 - vertexes] == 1 && AM_mapPointGazed({ line.v2->x, line.v2->y }))
    {
       l2.a.x = l.b.x - FTOM(4);
       l2.a.y = l.b.y - FTOM(4);
@@ -1882,7 +1882,7 @@ static void AM_drawWalls()
                }
             }
          }
-         else if(!(line->flags & (ML_MAPPED | ML_DONTDRAW)))
+         else if(!(line->flags & ML_MAPPED))
             AM_drawVisitedVerts(*line, l, mapcolor_prtl);
       }
    }
@@ -2008,7 +2008,7 @@ static void AM_drawWalls()
             }
          }
       }
-      else if(!(line->flags & (ML_MAPPED | ML_DONTDRAW)))
+      else if(!(line->flags & ML_MAPPED))
          AM_drawVisitedVerts(*line, l, mapcolor_unsn);
    } // end for
 }
@@ -2491,6 +2491,15 @@ void AM_Drawer()
 void AM_SetupVisitPoints()
 {
    amVertexVisit = ecalloctag(int *, numvertexes, sizeof(int), PU_LEVEL, nullptr);
+   for(int i = 0; i < numlines; ++i)
+   {
+      const line_t &line = lines[i];
+      if(line.flags & ML_MAPPED)
+      {
+         ++amVertexVisit[line.v1 - vertexes];
+         ++amVertexVisit[line.v2 - vertexes];
+      }
+   }
 }
 
 //
