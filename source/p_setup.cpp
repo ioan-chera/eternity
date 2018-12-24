@@ -3655,6 +3655,8 @@ void P_SetupLevel(WadDirectory *dir, const char *mapname, int playermask,
       P_LoadSideDefs2(lumpnum + ML_SIDEDEFS);
    
    P_LoadLineDefs2();                      // killough 4/4/98
+
+   AM_SetupVisitPoints();
    
    // IOANCH 20151213: use mgla here and elsewhere
    

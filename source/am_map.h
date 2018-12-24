@@ -62,6 +62,9 @@ void AM_clearMarks(void);
 class Mobj;
 void AM_Coordinates(const Mobj *mo, fixed_t &x, fixed_t &y, fixed_t &z);
 
+void AM_SetupVisitPoints();
+void AM_VisitPoints(const line_t &line);
+
 typedef v2double_t mpoint_t;
 
 extern mpoint_t *markpoints;

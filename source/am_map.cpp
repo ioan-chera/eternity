@@ -321,6 +321,7 @@ static bool am_usebackdrop = false;
 
 // Automap eye cursor
 static mpoint_t amGazePosition = { 0, 0 };
+static int *amVertexVisit;
 
 // haleyjd 08/01/09: this function is unused
 #if 0
@@ -1756,6 +1757,57 @@ inline static bool AM_dontDraw(const line_t &line)
 }
 
 //
+// True if a map point is within gaze
+//
+static bool AM_mapPointGazed(v2fixed_t point)
+{
+   int fx = CXMTOF(M_FixedToDouble(point.x));
+   int fy = CYMTOF(M_FixedToDouble(point.y));
+   if(fx >= f_x && fx < f_w && fy >= f_y && fy < f_h)
+   {
+      int drawx = (fx << FRACBITS) / video.xscale;
+      int drawy = (fy << FRACBITS) / video.yscale;
+      return abs(drawx - int(amGazePosition.x * SCREENWIDTH)) <= GAZE_MARK_DISTANCE_X &&
+         abs(drawy - int(amGazePosition.y * SCREENHEIGHT)) <= GAZE_MARK_DISTANCE_Y;
+   }
+   return false;
+}
+
+//
+// Draws just the visited vertices of undrawn line
+//
+static void AM_drawVisitedVerts(const line_t &line, const mline_t &l, int colour)
+{
+   static mline_t l2;
+   if(amVertexVisit[line.v1 - vertexes] && AM_mapPointGazed({ line.v1->x, line.v1->y }))
+   {
+      l2.a.x = l.a.x - FTOM(4);
+      l2.a.y = l.a.y - FTOM(4);
+      l2.b.x = l.a.x + FTOM(4);
+      l2.b.y = l.a.y + FTOM(4);
+      AM_drawMline(&l2, colour);
+      l2.a.x = l.a.x + FTOM(4);
+      l2.a.y = l.a.y - FTOM(4);
+      l2.b.x = l.a.x - FTOM(4);
+      l2.b.y = l.a.y + FTOM(4);
+      AM_drawMline(&l2, colour);
+   }
+   if(amVertexVisit[line.v2 - vertexes] && AM_mapPointGazed({ line.v2->x, line.v2->y }))
+   {
+      l2.a.x = l.b.x - FTOM(4);
+      l2.a.y = l.b.y - FTOM(4);
+      l2.b.x = l.b.x + FTOM(4);
+      l2.b.y = l.b.y + FTOM(4);
+      AM_drawMline(&l2, colour);
+      l2.a.x = l.b.x + FTOM(4);
+      l2.a.y = l.b.y - FTOM(4);
+      l2.b.x = l.b.x - FTOM(4);
+      l2.b.y = l.b.y + FTOM(4);
+      AM_drawMline(&l2, colour);
+   }
+}
+
+//
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
@@ -1829,7 +1881,9 @@ static void AM_drawWalls()
                   AM_drawMline(&l, mapcolor_prtl);
                }
             }
-         } // end else if      
+         }
+         else if(!(line->flags & ML_MAPPED))
+            AM_drawVisitedVerts(*line, l, mapcolor_prtl);
       }
    }
 
@@ -1953,7 +2007,9 @@ static void AM_drawWalls()
                AM_drawMline(&l, mapcolor_unsn);
             }
          }
-      } // end else if
+      }
+      else if(!(line->flags & ML_MAPPED))
+         AM_drawVisitedVerts(*line, l, mapcolor_unsn);
    } // end for
 }
 
@@ -2422,6 +2478,28 @@ void AM_Drawer()
 
    AM_drawCrosshair(mapcolor_hair); //jff 1/7/98 default crosshair color   
    AM_drawMarks();
+}
+
+//=============================================================================
+//
+// Eyetracking aid
+//
+
+//
+// Called from level setup
+//
+void AM_SetupVisitPoints()
+{
+   amVertexVisit = ecalloctag(int *, numvertexes, sizeof(int), PU_LEVEL, nullptr);
+}
+
+//
+// Visit points of line after having ML_MAPPED set
+//
+void AM_VisitPoints(const line_t &line)
+{
+   ++amVertexVisit[line.v1 - vertexes];
+   ++amVertexVisit[line.v2 - vertexes];
 }
 
 //=============================================================================

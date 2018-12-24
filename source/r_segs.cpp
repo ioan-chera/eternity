@@ -28,6 +28,7 @@
 #include "z_zone.h"
 #include "i_system.h"
 
+#include "am_map.h"
 #include "doomstat.h"
 #include "e_exdata.h"
 #include "p_info.h"
@@ -755,7 +756,10 @@ void R_StoreWallRange(const int start, const int stop)
       segclip.ceilingplane = R_CheckPlane(segclip.ceilingplane, start, stop);
 
    if(!(segclip.line->linedef->flags & (ML_MAPPED | ML_DONTDRAW)))
+   {
       segclip.line->linedef->flags |= ML_MAPPED;
+      AM_VisitPoints(*segclip.line->linedef);
+   }
 
    if(clipx1)
    {
