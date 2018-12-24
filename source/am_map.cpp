@@ -312,9 +312,7 @@ static byte *am_backdrop = NULL;
 static bool am_usebackdrop = false;
 
 // Automap eye cursor
-static mpoint_t amEyeCursorPosition = { DBL_MAX, 0 };
-static bool amEyeCursorUpdated;
-static int amEyeCursorLump = -1;
+static mpoint_t amGazePosition = { DBL_MAX, 0 };
 
 // haleyjd 08/01/09: this function is unused
 #if 0
@@ -633,9 +631,6 @@ static void AM_loadPics()
       marknums[i] = PatchLoader::CacheName(wGlobalDir, namebuf, PU_STATIC);
    }
 
-   // Eyetracking
-   amEyeCursorLump = W_CheckNumForName("CROSS1");
-
    // haleyjd 12/22/02: automap background support (raw format)
    if((lumpnum = W_CheckNumForName("AUTOPAGE")) != -1)
    {
@@ -873,8 +868,7 @@ bool AM_Responder(const event_t *ev)
       }
       else if(ev->type == ev_eyetracking && ev->data1 & EV_EYE_GAZE)
       {
-         amEyeCursorPosition = { ev->data2, ev->data3 };
-         amEyeCursorUpdated = true;
+         amGazePosition = { ev->data2, ev->data3 };
 
 #if 0
          if(!followplayer && !m_paninc.x && !m_paninc.y)
@@ -2364,23 +2358,6 @@ static void AM_drawMarks()
 }
 
 //
-// Draws the eye-controlled cursor, if applicable
-//
-static void AM_drawEyeCursor()
-{
-   if(!amEyeCursorUpdated || amEyeCursorLump < 0)
-      return;
-   patch_t *patch = PatchLoader::CacheNum(wGlobalDir, amEyeCursorLump, PU_CACHE);
-   int fx = int(round(SCREENWIDTH * amEyeCursorPosition.x)) - patch->width / 2;
-   int fy = int(round(SCREENHEIGHT * amEyeCursorPosition.y)) - patch->height / 2;
-   V_DrawPatchTranslated(fx, fy, &vbscreen, patch, cr_blue, false);
-
-   byte jackson = 64;
-   V_DrawBlock(fx + patch->width / 2, fy + patch->height / 2, &vbscreen, 1, 1, &jackson);
-   amEyeCursorUpdated = false;
-}
-
-//
 // AM_drawCrosshair()
 //
 // Draw the single point crosshair representing map center
@@ -2411,8 +2388,6 @@ void AM_Drawer()
    
    if(automap_grid)                 // killough 2/28/98: change var name
       AM_drawGrid(mapcolor_grid);   //jff 1/7/98 grid default color
-
-   AM_drawEyeCursor();
    
    AM_drawWalls();
 
@@ -2450,7 +2425,7 @@ CONSOLE_COMMAND(am_movetogaze, 0)
 {
    if(!automapactive)
       return;
-   v2double_t targpos = { m_x + m_w * amEyeCursorPosition.x, m_y + m_h * (1 - amEyeCursorPosition.y * (25./21)) };
+   v2double_t targpos = { m_x + m_w * amGazePosition.x, m_y + m_h * (1 - amGazePosition.y * (25./21)) };
    v2double_t curpos = { m_x + m_w / 2, m_y + m_h / 2 };
    amPanAnimation.step = targpos - curpos;
    double distance = amPanAnimation.step.abs();
