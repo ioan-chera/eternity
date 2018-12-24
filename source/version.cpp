@@ -27,7 +27,7 @@
 #include "version.h"
 
 // sf: made int from define
-int version = VERSION_MIN_EYETRACK; //450;
+int version = 401;
 
 // haleyjd: subversion -- range from 0 to 255
 unsigned char subversion = 0;

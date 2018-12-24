@@ -620,7 +620,7 @@ inline static bool P_SectorIsSpecial(const sector_t *sector)
 static void P_handleGaze(const player_t &player)
 {
    const ticcmd_t &cmd = player.cmd;
-   if(cmd.eyeyaw == D_MAXINT || demo_version < VERSION_MIN_EYETRACK)
+   if(cmd.eyeyaw == D_MAXINT)
       return;  // no gaze detected
 
    unsigned fineangle = (cmd.eyepitch + ANG90) >> ANGLETOFINESHIFT;
