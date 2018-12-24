@@ -1886,6 +1886,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\acs_intr.h" />
+    <ClInclude Include="..\source\am_color.h" />
     <ClInclude Include="..\Source\am_map.h" />
     <ClInclude Include="..\source\a_args.h" />
     <ClInclude Include="..\source\cam_common.h" />

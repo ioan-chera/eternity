@@ -26,6 +26,7 @@
 #include "z_zone.h"
 #include "i_system.h"
 
+#include "am_color.h"
 #include "am_map.h"
 #include "c_io.h"
 #include "c_runcmd.h"
@@ -57,6 +58,13 @@
 #include "v_patchfmt.h"
 #include "v_video.h"
 #include "w_wad.h"
+
+enum
+{
+   // Distance from the gaze point to the mark to highlight it
+   GAZE_MARK_DISTANCE_X = 24,
+   GAZE_MARK_DISTANCE_Y = 5 * GAZE_MARK_DISTANCE_X / 6
+};
 
 
 //jff 1/7/98 default acolors added
@@ -312,7 +320,7 @@ static byte *am_backdrop = NULL;
 static bool am_usebackdrop = false;
 
 // Automap eye cursor
-static mpoint_t amGazePosition = { DBL_MAX, 0 };
+static mpoint_t amGazePosition = { 0, 0 };
 
 // haleyjd 08/01/09: this function is unused
 #if 0
@@ -724,6 +732,8 @@ static void AM_LevelInit()
    if(scale_mtof > max_scale_mtof)
       scale_mtof = min_scale_mtof;
    scale_ftom = 1.0 / scale_mtof;
+
+   AM_InitColourTables();
 }
 
 //
@@ -2342,10 +2352,17 @@ static void AM_drawMarks()
             
             if(fx >= f_x && fx < f_w - w && fy >= f_y && fy < f_h - h)
             {
-               V_DrawPatch((fx<<FRACBITS)/video.xscale, 
-                           (fy<<FRACBITS)/video.yscale, 
-                           &vbscreen, 
-                           marknums[d]);
+               int drawx = (fx << FRACBITS) / video.xscale;
+               int drawy = (fy << FRACBITS) / video.yscale;
+
+               if(abs(drawx - int(amGazePosition.x * SCREENWIDTH)) <= GAZE_MARK_DISTANCE_X &&
+                  abs(drawy - int(amGazePosition.y * SCREENHEIGHT)) <= GAZE_MARK_DISTANCE_Y)
+               {
+                  V_DrawPatchTranslated(drawx, drawy, &vbscreen, marknums[d], amTransMarkHighlight, 
+                     false);
+               }
+               else
+                  V_DrawPatch(drawx, drawy, &vbscreen, marknums[d]);
             }
             
             fx -= w - (video.xscale >> FRACBITS); // killough 2/22/98: 1 space backwards

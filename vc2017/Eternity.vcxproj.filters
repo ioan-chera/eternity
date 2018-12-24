@@ -1820,6 +1820,9 @@
     <ClInclude Include="..\source\eye_fixation.h">
       <Filter>Source Files\Eye</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\am_color.h">
+      <Filter>Source Files\AM_</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\ee.ico">
@@ -1836,6 +1839,7 @@
       <Filter>Tobii</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="@(NativeLibs)" />
     <None Include="@(NativeLibs)" />
   </ItemGroup>
   <ItemGroup>

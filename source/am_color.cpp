@@ -27,6 +27,8 @@
 //----------------------------------------------------------------------------
 
 #include "z_zone.h"
+
+#include "am_color.h"
 #include "doomdef.h"
 #include "c_runcmd.h"
 
@@ -106,5 +108,15 @@ CONSOLE_VARIABLE(mapcolor_sngl, mapcolor_sngl, 0) {}
 CONSOLE_VARIABLE(mapcolor_frnd, mapcolor_frnd, 0) {}
 CONSOLE_VARIABLE(mapcolor_prtl, mapcolor_prtl, 0) {}
 CONSOLE_VARIABLE(mapportal_overlay, mapportal_overlay, 0) {}
+
+byte amTransMarkHighlight[256];
+
+//
+// Initializes automap colourmaps
+//
+void AM_InitColourTables()
+{
+   memset(amTransMarkHighlight, 4, 256);
+}
 
 // EOF
