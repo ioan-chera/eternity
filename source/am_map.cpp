@@ -1882,7 +1882,7 @@ static void AM_drawWalls()
                }
             }
          }
-         else if(!(line->flags & ML_MAPPED))
+         else if(!(line->flags & (ML_MAPPED | ML_DONTDRAW)))
             AM_drawVisitedVerts(*line, l, mapcolor_prtl);
       }
    }
@@ -2008,7 +2008,7 @@ static void AM_drawWalls()
             }
          }
       }
-      else if(!(line->flags & ML_MAPPED))
+      else if(!(line->flags & (ML_MAPPED | ML_DONTDRAW)))
          AM_drawVisitedVerts(*line, l, mapcolor_unsn);
    } // end for
 }

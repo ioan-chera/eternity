@@ -699,9 +699,14 @@ static void P_ArchiveWorld(SaveArchive &arc)
    for(i = 0, li = lines; i < numlines; ++i, ++li)
    {
       int j;
-
+      bool unmapped = false;
+      if(arc.isLoading() && !(li->flags & (ML_MAPPED | ML_DONTDRAW)))
+         unmapped = true;
       arc << li->flags << li->special << li->tag
           << li->args[0] << li->args[1] << li->args[2] << li->args[3] << li->args[4];
+
+      if(arc.isLoading() && unmapped && li->flags & ML_MAPPED)
+         AM_VisitPoints(*li);
 
       for(j = 0; j < 2; j++)
       {

@@ -36,6 +36,7 @@ enum
 };
 
 struct event_t;
+struct line_t;
 
 // Called by main loop.
 bool AM_Responder(const event_t *ev);

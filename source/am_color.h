@@ -25,6 +25,8 @@
 #ifndef AM_COLOR_H_
 #define AM_COLOR_H_
 
+#include "doomtype.h"
+
 void AM_InitColourTables();
 
 extern byte amTransMarkHighlight[256];
