@@ -686,9 +686,12 @@ static void Polyobj_setCenterPt(polyobj_t *po)
 
     for(i = 0; i < po->numVertices; ++i)
     {
-        center_x += po->vertices[i]->x / po->numVertices;
-        center_y += po->vertices[i]->y / po->numVertices;
+        center_x += po->vertices[i]->x;
+        center_y += po->vertices[i]->y;
     }
+
+    center_x /= po->numVertices;
+    center_y /= po->numVertices;
 
     po->centerPt.x = center_x;
     po->centerPt.y = center_y;

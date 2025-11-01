@@ -27,6 +27,9 @@ Improvements
 Bug fixes
 ---------
 * Fixed failure on Windows to load file paths with unicode (non US English) characters.
+* Fixed polyobject center point calculation causing incorrect values for GetPolyobjX and GetPolyobjY ACS functions. The bug
+  was caused by integer division being performed inside the averaging loop, leading to truncation errors that accumulated
+  and resulted in offsets of 1 map unit for symmetrical polyobjects and larger deviations for asymmetrical ones.
 * Fixed A_BFGSpray not using the parameter, and always being locked at 40 rays.
 * Fixed bad rendering of specially paletted PNG file for the Heretic episode 2 ending screen.
 * Fixed bad implementation of TakeInventory.
