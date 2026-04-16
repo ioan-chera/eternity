@@ -1236,15 +1236,6 @@ static void R_projectSprite(cmapcontext_t &cmapcontext, spritecontext_t &spritec
             {
                 return;
             }
-            windowlinegen_t linegen1, linegen2;
-            if(R_PickNearestBoxLines(cb_viewpoint, barrier.fbox, linegen1, linegen2))
-            {
-
-                if(linegen1.normal * (posf - linegen1.start) >= 0)
-                    return;
-                if(linegen2.normal.nonzero() && linegen2.normal * (posf - linegen2.start) >= 0)
-                    return;
-            }
         }
     }
 
@@ -1324,6 +1315,31 @@ static void R_projectSprite(cmapcontext_t &cmapcontext, spritecontext_t &spritec
     if(y2 < 0.0f || (portalrender.active && y2 < portalrender.miny))
         return;
 
+    // Sector portal Z-based sprite trimming
+    float spriteYTop = y1, spriteYBottom = y2;
+    if(portalrender.active && portalrender.w->type != pw_line && portalrender.w->portal->type != R_SKYBOX)
+    {
+        const float portalClipZ = M_FixedToFloat(portalrender.w->planez - portalrender.w->vz);
+        const float portalScrY  = view.ycenter - (portalClipZ * distyscale);
+
+        if(portalrender.w->type == pw_floor)
+        {
+            // Floor portal: clip things above portal Z (smaller screen Y)
+            if(y2 <= portalScrY)
+                return; // entirely above portal Z
+            if(spriteYTop < portalScrY)
+                spriteYTop = portalScrY;
+        }
+        else
+        {
+            // Ceiling portal: clip things below portal Z (larger screen Y)
+            if(y1 >= portalScrY)
+                return; // entirely below portal Z
+            if(spriteYBottom > portalScrY)
+                spriteYBottom = portalScrY;
+        }
+    }
+
     if(x2 >= x1)
         pstep = 1.0f / (x2 - x1 + 1.0f);
 
@@ -1391,8 +1407,8 @@ static void R_projectSprite(cmapcontext_t &cmapcontext, spritecontext_t &spritec
     vis->dist  = idist;
     vis->scale = distyscale * thing->yscale;
 
-    vis->ytop    = y1;
-    vis->ybottom = y2;
+    vis->ytop    = spriteYTop;
+    vis->ybottom = spriteYBottom;
     if(spriteproj && spriteproj->portalline)
         vis->sector = eindex(spriteproj->mobj->subsector->sector - sectors);
     else

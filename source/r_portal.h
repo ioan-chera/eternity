@@ -225,8 +225,6 @@ void R_RenderPortals(rendercontext_t &context);
 
 portal_t *R_GetLinkedPortal(int markerlinenum, int anchorlinenum, fixed_t planez, int fromid, int toid);
 
-void R_CalcRenderBarrier(pwindow_t &window, const sectorbox_t &box);
-
 bool R_IsSkyLikePortalSurface(const surface_t &surface);
 bool R_IsSkyWall(const line_t &line);
 
@@ -297,7 +295,6 @@ struct renderbarrier_t
 {
     // Selection depends on context
     windowlinegen_t linegen;
-    float           fbox[4]; // for sector portals (very rough, won't cover all cases)
 };
 
 // SoM: TODO: Overlays go in here.

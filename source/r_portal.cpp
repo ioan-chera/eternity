@@ -258,32 +258,6 @@ static void R_calcRenderBarrier(const portal_t *portal, const windowlinegen_t &l
     R_applyPortalTransformTo(portal, translatedgen);
 }
 
-//
-// Expands a portal barrier BBox. For sector portals
-//
-void R_CalcRenderBarrier(pwindow_t &window, const sectorbox_t &box)
-{
-    const portal_t *portal = window.portal;
-    if(!R_portalIsAnchored(portal))
-        return;
-
-    static const int ind[2][4] = {
-        { BOXLEFT,   BOXRIGHT,  BOXRIGHT, BOXLEFT },
-        { BOXBOTTOM, BOXBOTTOM, BOXTOP,   BOXTOP  }
-    };
-
-    renderbarrier_t &barrier = window.barrier;
-    float            x, y;
-    for(int i = 0; i < 4; ++i)
-    {
-        // Use the corners of the box when applying transformation
-        x = box.fbox[ind[0][i]];
-        y = box.fbox[ind[1][i]];
-        R_applyPortalTransformTo(portal, x, y, true);
-        M_AddToBox2(barrier.fbox, x, y);
-    }
-}
-
 static pwindow_t *R_newPortalWindow(planecontext_t &planecontext, portalcontext_t &portalcontext, ZoneHeap &heap,
                                     const contextbounds_t &bounds, portal_t *p, const line_t *linedef,
                                     pwindowtype_e type)
@@ -1205,7 +1179,6 @@ pwindow_t *R_GetSectorPortalWindow(planecontext_t &planecontext, portalcontext_t
     pwindow_t *window =
         R_newPortalWindow(planecontext, portalcontext, heap, bounds, surface.portal, nullptr, pw_surface[surf]);
     window->planez = surface.height;
-    M_ClearBox(window->barrier.fbox);
 
     // Inherit the line info if active, to help cull segs
     if(portalrender.active)
