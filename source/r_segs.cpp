@@ -292,31 +292,8 @@ static void R_renderSegLoop(cmapcontext_t &cmapcontext, planecontext_t &planecon
     if(cmapcontext.fixedcolormap)
         column.colormap = cmapcontext.fixedcolormap;
 
-    // Sector portal Z trimming: compute the portal Z relative to original viewpoint
-    const portalrender_t &portalrender = portalcontext.portalrender;
-    const bool sectorPortalTrim = portalrender.active && portalrender.w->type != pw_line &&
-                                  portalrender.w->portal->type != R_SKYBOX;
-    const float portalClipZ = sectorPortalTrim ? M_FixedToFloat(portalrender.w->planez - portalrender.w->vz) : 0;
-    const bool  isFloorPortal = sectorPortalTrim && portalrender.w->type == pw_floor;
-
     for(i = segclip.x1; i <= segclip.x2; i++)
     {
-        // Trim columns by sector portal Z plane
-        if(sectorPortalTrim)
-        {
-            float portalScreenY = view.ycenter - (portalClipZ * segclip.dist * view.yfoc);
-            if(isFloorPortal)
-            {
-                if(portalScreenY > ceilingclip[i])
-                    ceilingclip[i] = portalScreenY;
-            }
-            else
-            {
-                if(portalScreenY < floorclip[i])
-                    floorclip[i] = portalScreenY;
-            }
-        }
-
         cliptop = (int)ceilingclip[i];
         clipbot = (int)floorclip[i];
 

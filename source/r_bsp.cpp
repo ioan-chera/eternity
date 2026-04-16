@@ -1339,6 +1339,41 @@ static void R_skewSeg(cb_seg_t &seg, const skewType_e skewType, const float zste
     }
 }
 
+//
+// Clamp a rendering height (float) to the sector portal plane when viewing through it.
+// pw_floor: things above the portal plane are outside the view, so ceilings clamp down.
+// pw_ceiling: things below the portal plane are outside the view, so floors clamp up.
+// Texture Y offsets are unaffected because they derive from the real sector (seg.line->...).
+//
+static inline float R_portalTrimF(float heightf, surf_e surf, const portalrender_t &portalrender,
+                                  const viewpoint_t &viewpoint)
+{
+    if(!portalrender.active || portalrender.w->type == pw_line || portalrender.w->portal->type == R_SKYBOX)
+        return heightf;
+    const float adjZ = M_FixedToFloat(portalrender.w->planez + viewpoint.z - portalrender.w->vz);
+    if(portalrender.w->type == pw_floor && surf == surf_ceil)
+        return heightf > adjZ ? adjZ : heightf;
+    if(portalrender.w->type == pw_ceiling && surf == surf_floor)
+        return heightf < adjZ ? adjZ : heightf;
+    return heightf;
+}
+
+//
+// Fixed-point companion of R_portalTrimF used for solidseg/clip heights.
+//
+static inline fixed_t R_portalTrim(fixed_t height, surf_e surf, const portalrender_t &portalrender,
+                                   const viewpoint_t &viewpoint)
+{
+    if(!portalrender.active || portalrender.w->type == pw_line || portalrender.w->portal->type == R_SKYBOX)
+        return height;
+    const fixed_t adjZ = portalrender.w->planez + viewpoint.z - portalrender.w->vz;
+    if(portalrender.w->type == pw_floor && surf == surf_ceil)
+        return height > adjZ ? adjZ : height;
+    if(portalrender.w->type == pw_ceiling && surf == surf_floor)
+        return height < adjZ ? adjZ : height;
+    return height;
+}
+
 static void R_2S_Sloped(cmapcontext_t &cmapcontext, planecontext_t &planecontext, portalcontext_t &portalcontext,
                         ZoneHeap &heap, const viewpoint_t &viewpoint, const cbviewpoint_t &cb_viewpoint,
                         const contextbounds_t &bounds, const uint64_t visitid, cb_seg_t &seg, float pstep, float i1,
@@ -1389,6 +1424,8 @@ static void R_2S_Sloped(cmapcontext_t &cmapcontext, planecontext_t &planecontext
 
         z1 += lclip1 * zstep;
         z2 -= (seg.line->len - lclip2) * zstep;
+        z1  = R_portalTrimF(z1, surf_ceil, portalrender, viewpoint);
+        z2  = R_portalTrimF(z2, surf_ceil, portalrender, viewpoint);
 
         seg.high  = view.ycenter - ((z1 - cb_viewpoint.z) * i1) - 1.0f;
         seg.high2 = view.ycenter - ((z2 - cb_viewpoint.z) * i2) - 1.0f;
@@ -1399,9 +1436,11 @@ static void R_2S_Sloped(cmapcontext_t &cmapcontext, planecontext_t &planecontext
     }
     else
     {
-        seg.high        = view.ycenter - ((seg.backsec->srf.ceiling.heightf - cb_viewpoint.z) * i1) - 1.0f;
-        seg.high2       = view.ycenter - ((seg.backsec->srf.ceiling.heightf - cb_viewpoint.z) * i2) - 1.0f;
-        seg.minbackceil = seg.backsec->srf.ceiling.height;
+        const float ceilf =
+            R_portalTrimF(seg.backsec->srf.ceiling.heightf, surf_ceil, portalrender, viewpoint);
+        seg.high        = view.ycenter - ((ceilf - cb_viewpoint.z) * i1) - 1.0f;
+        seg.high2       = view.ycenter - ((ceilf - cb_viewpoint.z) * i2) - 1.0f;
+        seg.minbackceil = R_portalTrim(seg.backsec->srf.ceiling.height, surf_ceil, portalrender, viewpoint);
     }
 
     seg.highstep = (seg.high2 - seg.high) * pstep;
@@ -1423,6 +1462,8 @@ static void R_2S_Sloped(cmapcontext_t &cmapcontext, planecontext_t &planecontext
 
         z1       += lclip1 * zstep;
         z2       -= (seg.line->len - lclip2) * zstep;
+        z1        = R_portalTrimF(z1, surf_floor, portalrender, viewpoint);
+        z2        = R_portalTrimF(z2, surf_floor, portalrender, viewpoint);
         seg.low   = view.ycenter - ((z1 - cb_viewpoint.z) * i1);
         seg.low2  = view.ycenter - ((z2 - cb_viewpoint.z) * i2);
 
@@ -1432,9 +1473,11 @@ static void R_2S_Sloped(cmapcontext_t &cmapcontext, planecontext_t &planecontext
     }
     else
     {
-        seg.low          = view.ycenter - ((seg.backsec->srf.floor.heightf - cb_viewpoint.z) * i1);
-        seg.low2         = view.ycenter - ((seg.backsec->srf.floor.heightf - cb_viewpoint.z) * i2);
-        seg.maxbackfloor = seg.backsec->srf.floor.height;
+        const float floorf =
+            R_portalTrimF(seg.backsec->srf.floor.heightf, surf_floor, portalrender, viewpoint);
+        seg.low          = view.ycenter - ((floorf - cb_viewpoint.z) * i1);
+        seg.low2         = view.ycenter - ((floorf - cb_viewpoint.z) * i2);
+        seg.maxbackfloor = R_portalTrim(seg.backsec->srf.floor.height, surf_floor, portalrender, viewpoint);
     }
 
     seg.lowstep = (seg.low2 - seg.low) * pstep;
@@ -1707,11 +1750,15 @@ static void R_2S_Normal(cmapcontext_t &cmapcontext, planecontext_t &planecontext
             (seg.line->sidedef->midtexture && (seg.line->linedef->extflags & EX_ML_CLIPMIDTEX)));
     marktheight = seg.frontsec->heightsec != seg.backsec->heightsec;
 
-    frontc = seg.frontsec->srf.ceiling.height;
-    backc  = seg.backsec->srf.ceiling.height;
+    frontc = R_portalTrim(seg.frontsec->srf.ceiling.height, surf_ceil, portalrender, viewpoint);
+    backc  = R_portalTrim(seg.backsec->srf.ceiling.height, surf_ceil, portalrender, viewpoint);
 
-    seg.high     = view.ycenter - ((seg.backsec->srf.ceiling.heightf - cb_viewpoint.z) * i1) - 1.0f;
-    seg.high2    = view.ycenter - ((seg.backsec->srf.ceiling.heightf - cb_viewpoint.z) * i2) - 1.0f;
+    {
+        const float ceilf =
+            R_portalTrimF(seg.backsec->srf.ceiling.heightf, surf_ceil, portalrender, viewpoint);
+        seg.high     = view.ycenter - ((ceilf - cb_viewpoint.z) * i1) - 1.0f;
+        seg.high2    = view.ycenter - ((ceilf - cb_viewpoint.z) * i2) - 1.0f;
+    }
     seg.highstep = (seg.high2 - seg.high) * pstep;
 
     seg.minbackceil = backc;
@@ -1902,10 +1949,14 @@ static void R_2S_Normal(cmapcontext_t &cmapcontext, planecontext_t &planecontext
             seg.c_portalignore = true;
     }
 
-    seg.low          = view.ycenter - ((seg.backsec->srf.floor.heightf - cb_viewpoint.z) * i1);
-    seg.low2         = view.ycenter - ((seg.backsec->srf.floor.heightf - cb_viewpoint.z) * i2);
+    {
+        const float floorf =
+            R_portalTrimF(seg.backsec->srf.floor.heightf, surf_floor, portalrender, viewpoint);
+        seg.low  = view.ycenter - ((floorf - cb_viewpoint.z) * i1);
+        seg.low2 = view.ycenter - ((floorf - cb_viewpoint.z) * i2);
+    }
     seg.lowstep      = (seg.low2 - seg.low) * pstep;
-    seg.maxbackfloor = seg.backsec->srf.floor.height;
+    seg.maxbackfloor = R_portalTrim(seg.backsec->srf.floor.height, surf_floor, portalrender, viewpoint);
 
     // ioanch: don't render lower textures or portals if they're below the
     // current plane-z window. Necessary for edge portals
@@ -1973,6 +2024,8 @@ static void R_1SidedLine(cmapcontext_t &cmapcontext, planecontext_t &planecontex
                          float i2, float textop, float texbottom, const sector_t *beyond, const side_t *side,
                          const seg_t *line)
 {
+    const portalrender_t &portalrender = portalcontext.portalrender;
+
     seg.twosided = false;
     if(!beyond)
         seg.toptex = seg.bottomtex = 0;
@@ -1994,8 +2047,10 @@ static void R_1SidedLine(cmapcontext_t &cmapcontext, planecontext_t &planecontex
                 seg.toptexmid = M_FloatToFixed(texhigh + seg.toptexh + seg.toffset_base_y +
                                                seg.toffset_top_y); // SCALE_TODO: Y scale-factor here
 
-            seg.high     = view.ycenter - ((beyond->srf.ceiling.heightf - cb_viewpoint.z) * i1) - 1.0f;
-            seg.high2    = view.ycenter - ((beyond->srf.ceiling.heightf - cb_viewpoint.z) * i2) - 1.0f;
+            const float ceilf =
+                R_portalTrimF(beyond->srf.ceiling.heightf, surf_ceil, portalrender, viewpoint);
+            seg.high     = view.ycenter - ((ceilf - cb_viewpoint.z) * i1) - 1.0f;
+            seg.high2    = view.ycenter - ((ceilf - cb_viewpoint.z) * i2) - 1.0f;
             seg.highstep = (seg.high2 - seg.high) * pstep;
         }
         else
@@ -2015,8 +2070,10 @@ static void R_1SidedLine(cmapcontext_t &cmapcontext, planecontext_t &planecontex
                 seg.bottomtexmid = M_FloatToFixed(texlow + seg.toffset_base_y +
                                                   seg.toffset_bottom_y); // SCALE_TODO: Y scale-factor here
 
-            seg.low     = view.ycenter - ((beyond->srf.floor.heightf - cb_viewpoint.z) * i1);
-            seg.low2    = view.ycenter - ((beyond->srf.floor.heightf - cb_viewpoint.z) * i2);
+            const float floorf =
+                R_portalTrimF(beyond->srf.floor.heightf, surf_floor, portalrender, viewpoint);
+            seg.low     = view.ycenter - ((floorf - cb_viewpoint.z) * i1);
+            seg.low2    = view.ycenter - ((floorf - cb_viewpoint.z) * i2);
             seg.lowstep = (seg.low2 - seg.low) * pstep;
         }
         else
@@ -2463,6 +2520,8 @@ static void R_addLine(bspcontext_t &bspcontext, cmapcontext_t &cmapcontext, plan
 
         z1       += lclip1 * zstep;
         z2       -= (seg.line->len - lclip2) * zstep;
+        z1        = R_portalTrimF(z1, surf_ceil, portalrender, viewpoint);
+        z2        = R_portalTrimF(z2, surf_ceil, portalrender, viewpoint);
         seg.top   = view.ycenter - ((z1 - cb_viewpoint.z) * i1);
         seg.top2  = view.ycenter - ((z2 - cb_viewpoint.z) * i2);
 
@@ -2472,9 +2531,11 @@ static void R_addLine(bspcontext_t &bspcontext, cmapcontext_t &cmapcontext, plan
     }
     else
     {
-        seg.top          = view.ycenter - ((seg.frontsec->srf.ceiling.heightf - cb_viewpoint.z) * i1);
-        seg.top2         = view.ycenter - ((seg.frontsec->srf.ceiling.heightf - cb_viewpoint.z) * i2);
-        seg.minfrontceil = seg.frontsec->srf.ceiling.height;
+        const float ceilf =
+            R_portalTrimF(seg.frontsec->srf.ceiling.heightf, surf_ceil, portalrender, viewpoint);
+        seg.top          = view.ycenter - ((ceilf - cb_viewpoint.z) * i1);
+        seg.top2         = view.ycenter - ((ceilf - cb_viewpoint.z) * i2);
+        seg.minfrontceil = R_portalTrim(seg.frontsec->srf.ceiling.height, surf_ceil, portalrender, viewpoint);
     }
     seg.topstep = (seg.top2 - seg.top) * pstep;
 
@@ -2492,6 +2553,8 @@ static void R_addLine(bspcontext_t &bspcontext, cmapcontext_t &cmapcontext, plan
 
         z1          += lclip1 * zstep;
         z2          -= (seg.line->len - lclip2) * zstep;
+        z1           = R_portalTrimF(z1, surf_floor, portalrender, viewpoint);
+        z2           = R_portalTrimF(z2, surf_floor, portalrender, viewpoint);
         seg.bottom   = view.ycenter - ((z1 - cb_viewpoint.z) * i1) - 1.0f;
         seg.bottom2  = view.ycenter - ((z2 - cb_viewpoint.z) * i2) - 1.0f;
 
@@ -2501,9 +2564,11 @@ static void R_addLine(bspcontext_t &bspcontext, cmapcontext_t &cmapcontext, plan
     }
     else
     {
-        seg.bottom        = view.ycenter - ((seg.frontsec->srf.floor.heightf - cb_viewpoint.z) * i1) - 1.0f;
-        seg.bottom2       = view.ycenter - ((seg.frontsec->srf.floor.heightf - cb_viewpoint.z) * i2) - 1.0f;
-        seg.maxfrontfloor = seg.frontsec->srf.floor.height;
+        const float floorf =
+            R_portalTrimF(seg.frontsec->srf.floor.heightf, surf_floor, portalrender, viewpoint);
+        seg.bottom        = view.ycenter - ((floorf - cb_viewpoint.z) * i1) - 1.0f;
+        seg.bottom2       = view.ycenter - ((floorf - cb_viewpoint.z) * i2) - 1.0f;
+        seg.maxfrontfloor = R_portalTrim(seg.frontsec->srf.floor.height, surf_floor, portalrender, viewpoint);
     }
 
     seg.bottomstep = (seg.bottom2 - seg.bottom) * pstep;
